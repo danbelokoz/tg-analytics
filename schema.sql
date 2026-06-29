@@ -93,3 +93,20 @@ create policy "public read posts"     on public.posts             for select usi
 
 -- Доступ для PostgREST: чтение view роли anon/authenticated (чтобы фронт не словил 401)
 grant select on public.channel_latest to anon, authenticated;
+
+-- ─────────────────────────────────────────────────────────────
+-- Watchlist: что парсить (добавляется из UI через /api/add-channel,
+-- пишет service_role). Парсер читает watchlist ∪ channels.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.watchlist (
+  username   text primary key,
+  is_active  boolean not null default true,
+  added_at   timestamptz not null default now()
+);
+alter table public.watchlist enable row level security;
+drop policy if exists "public read watchlist" on public.watchlist;
+create policy "public read watchlist" on public.watchlist for select using (true);
+
+-- засидить уже спарсенные каналы, чтобы продолжали обновляться
+insert into public.watchlist (username)
+  select username from public.channels on conflict (username) do nothing;

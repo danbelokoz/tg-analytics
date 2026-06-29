@@ -38,16 +38,19 @@ SB_HEADERS = {
 }
 
 
-def sb_active_usernames():
-    """Каналы, помеченные is_active в БД."""
+def _sb_usernames(table):
     r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/channels",
+        f"{SUPABASE_URL}/rest/v1/{table}",
         headers=SB_HEADERS,
         params={"select": "username", "is_active": "eq.true"},
         timeout=30,
     )
-    r.raise_for_status()
-    return [row["username"] for row in r.json()]
+    return [row["username"] for row in r.json()] if r.ok else []
+
+
+def sb_active_usernames():
+    """Что парсить: watchlist (добавленные из UI) ∪ уже известные channels."""
+    return list(dict.fromkeys(_sb_usernames("watchlist") + _sb_usernames("channels")))
 
 
 def sb_upsert(table, rows, on_conflict):
