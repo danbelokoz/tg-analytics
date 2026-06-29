@@ -1,0 +1,41 @@
+name: Parse Telegram channels
+
+on:
+  schedule:
+    # каждые 6 часов в :17 — не в :00, чтобы не попадать в пик GitHub-крон-дропов
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      channels:
+        description: "Доп. каналы через запятую (разово засидить)"
+        required: false
+        default: ""
+
+concurrency:
+  group: tg-parse
+  cancel-in-progress: false   # не обрывать идущий парс новым запуском
+
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r parser/requirements.txt
+
+      - name: Parse
+        env:
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+          TG_SESSION: ${{ secrets.TG_SESSION }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CHANNELS: ${{ github.event.inputs.channels }}
+          POSTS_LIMIT: "30"
+        run: python parser/parse_channels.py

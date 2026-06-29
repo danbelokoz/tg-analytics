@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TG Analytics — статистика Telegram-каналов</title>
+  <style>
+    :root { --bg:#0f1115; --card:#181b22; --line:#262b35; --fg:#e8eaed; --muted:#8b93a1; --accent:#f0b90b; --green:#1fae6f; --red:#e05656; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif; }
+    header { padding:28px 20px 8px; max-width:1000px; margin:0 auto; }
+    h1 { margin:0 0 4px; font-size:22px; }
+    .sub { color:var(--muted); font-size:13px; }
+    .wrap { max-width:1000px; margin:0 auto; padding:16px 20px 60px; }
+    .search { width:100%; padding:10px 12px; margin:12px 0; background:var(--card); border:1px solid var(--line); border-radius:10px; color:var(--fg); }
+    table { width:100%; border-collapse:collapse; }
+    th,td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; user-select:none; white-space:nowrap; }
+    td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .ch { font-weight:600; }
+    .ch small { display:block; color:var(--muted); font-weight:400; }
+    .pos { color:var(--green); } .neg { color:var(--red); }
+    .state { color:var(--muted); padding:40px 0; text-align:center; }
+    a { color:inherit; text-decoration:none; }
+    tr:hover td { background:#1d212a; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 TG Analytics</h1>
+    <div class="sub">Статистика публичных Telegram-каналов · обновляется каждые 6 часов</div>
+  </header>
+  <div class="wrap">
+    <input id="q" class="search" placeholder="Поиск по каналу…" />
+    <table id="tbl" hidden>
+      <thead>
+        <tr>
+          <th data-k="title">Канал</th>
+          <th class="num" data-k="subscribers">Подписчики</th>
+          <th class="num" data-k="growth_7d">Рост 7д</th>
+          <th class="num" data-k="avg_views">Ср. охват</th>
+          <th class="num" data-k="err_pct">ER %</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="state" class="state">Загрузка…</div>
+  </div>
+
+  <script>
+    // ── Подставь значения из НОВОГО Supabase-проекта (Settings → API) ──
+    const SUPABASE_URL = "https://jaqhstbeelzciburiqyt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcWhzdGJlZWx6Y2lidXJpcXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDg3ODcsImV4cCI6MjA5NTg4NDc4N30.RJ9khzIXvNUaxCw8bu-pF8Ye3_8boGCz3vvgUUO_q1E";   // anon/public — безопасно встраивать (RLS = только чтение)
+
+    let data = [], sortKey = "subscribers", sortDir = -1;
+    const fmt = n => n == null ? "—" : Intl.NumberFormat("ru").format(n);
+    const growth = n => n == null ? "—" : `<span class="${n>=0?'pos':'neg'}">${n>=0?'+':''}${fmt(n)}</span>`;
+
+    async function load() {
+      try {
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/channel_latest?select=*&order=subscribers.desc.nullslast`, {
+          headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY }
+        });
+        if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0,120));
+        data = await r.json();
+        if (!data.length) { state.textContent = "Пока нет данных — запусти парсер (workflow_dispatch)."; return; }
+        state.hidden = true; tbl.hidden = false; render();
+      } catch (e) {
+        state.textContent = "Ошибка загрузки: " + e.message + " — проверь SUPABASE_URL / anon key / RLS.";
+      }
+    }
+
+    function render() {
+      const term = q.value.trim().toLowerCase();
+      const list = data
+        .filter(c => !term || (c.title||"").toLowerCase().includes(term) || (c.username||"").toLowerCase().includes(term))
+        .sort((a,b) => ((b[sortKey] ?? -Infinity) - (a[sortKey] ?? -Infinity)) * (sortDir<0?1:-1));
+      rows.innerHTML = list.map(c => `
+        <tr>
+          <td><a class="ch" href="https://t.me/${c.username}" target="_blank">${c.title || c.username}
+            <small>@${c.username}</small></a></td>
+          <td class="num">${fmt(c.subscribers)}</td>
+          <td class="num">${growth(c.growth_7d)}</td>
+          <td class="num">${fmt(c.avg_views)}</td>
+          <td class="num">${c.err_pct == null ? "—" : c.err_pct + "%"}</td>
+        </tr>`).join("");
+    }
+
+    const q = document.getElementById("q"), rows = document.getElementById("rows");
+    const tbl = document.getElementById("tbl"), state = document.getElementById("state");
+    q.addEventListener("input", render);
+    document.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
+      const k = th.dataset.k; if (!k) return;
+      sortDir = (sortKey === k) ? -sortDir : -1; sortKey = k; render();
+    }));
+    load();
+  </script>
+</body>
+</html>
