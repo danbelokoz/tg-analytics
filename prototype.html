@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TG Jobs — каталог вакансий из Telegram-каналов</title>
+  <style>
+    :root{
+      --bg:#f4f6f9; --surface:#ffffff; --surface-2:#f1f4f8; --line:#e5e9f0;
+      --fg:#0d1424; --muted:#5a6475; --faint:#9aa4b4;
+      --accent:#2563eb; --accent-2:#1d4ed8; --accent-soft:#eaf0ff;
+      --green:#16a34a; --green-soft:#e7f6ec; --red:#dc2626; --red-soft:#fdecec;
+      --amber:#b45309; --purple:#7c3aed; --purple-soft:#f1ecfd;
+      --radius:14px; --radius-sm:10px;
+      --shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+      --shadow-lg:0 12px 40px rgba(16,24,40,.12);
+      font-synthesis:none;
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;background:var(--bg);color:var(--fg);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased;}
+    a{color:inherit;text-decoration:none;}
+    button{font-family:inherit;}
+
+    /* ============ HEADER ============ */
+    header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.85);
+      backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--line);}
+    .hbar{max-width:1240px;margin:0 auto;padding:0 24px;height:62px;
+      display:flex;align-items:center;gap:24px;}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.02em;flex:0 0 auto;}
+    .brand .mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:grid;place-items:center;color:#fff;}
+    .brand .mark svg{width:18px;height:18px;}
+    .brand b{color:var(--accent);}
+    nav{display:flex;gap:4px;flex:1;}
+    nav a{padding:8px 13px;border-radius:9px;font-size:14.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:.12s;}
+    nav a:hover{color:var(--fg);background:var(--surface-2);}
+    nav a.active{color:var(--accent);background:var(--accent-soft);}
+    .hsearch{position:relative;width:230px;flex:0 0 auto;}
+    .hsearch input{width:100%;height:38px;padding:0 12px 0 36px;background:var(--surface-2);
+      border:1px solid transparent;border-radius:10px;color:var(--fg);font-size:14px;outline:none;transition:.15s;}
+    .hsearch input:focus{background:#fff;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+    .hsearch svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--faint);width:16px;height:16px;}
+    .btn{appearance:none;border:0;cursor:pointer;font-weight:600;font-size:14px;
+      padding:9px 16px;border-radius:10px;color:#fff;background:var(--accent);
+      transition:.12s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+    .btn:hover{background:var(--accent-2);}
+    .btn svg{width:15px;height:15px;}
+    .btn-ghost{background:var(--surface);border:1px solid var(--line);color:var(--fg);}
+    .btn-ghost:hover{background:var(--surface-2);}
+
+    .wrap{max-width:1240px;margin:0 auto;padding:28px 24px 90px;}
+    .page-head{margin-bottom:22px;}
+    .page-head h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.025em;}
+    .page-head p{margin:6px 0 0;color:var(--muted);font-size:14.5px;}
+
+    /* ============ STAT STRIP ============ */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+    .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);}
+    .stat .k{font-size:12px;color:var(--muted);font-weight:600;}
+    .stat .v{font-size:26px;font-weight:800;margin-top:7px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+    .stat .s{font-size:12.5px;color:var(--faint);margin-top:3px;}
+
+    /* ============ FEED LAYOUT ============ */
+    .feed-layout{display:grid;grid-template-columns:262px 1fr;gap:22px;align-items:start;}
+    .filters{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      padding:18px;position:sticky;top:78px;box-shadow:var(--shadow);}
+    .filters h3{margin:0;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
+    .filters h3 a{font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer;}
+    .fgroup{margin-top:18px;}
+    .fgroup .lbl{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px;}
+    .chips{display:flex;flex-wrap:wrap;gap:7px;}
+    .chip{font-size:13px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);
+      background:var(--surface);color:var(--muted);cursor:pointer;transition:.12s;user-select:none;font-weight:500;}
+    .chip:hover{border-color:var(--accent);color:var(--fg);}
+    .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .frow{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer;user-select:none;}
+    .salary-val{color:var(--fg);font-weight:700;font-variant-numeric:tabular-nums;}
+    input[type=range]{width:100%;accent-color:var(--accent);}
+    input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;}
+
+    /* ============ CONTENT HEAD ============ */
+    .chead{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+    .chead .grow{flex:1;}
+    .sel{background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:10px;
+      height:40px;padding:0 12px;font:inherit;font-size:13.5px;outline:none;cursor:pointer;box-shadow:var(--shadow);}
+    .view-toggle{display:flex;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;box-shadow:var(--shadow);}
+    .view-toggle button{border:0;background:transparent;color:var(--faint);cursor:pointer;padding:7px 9px;border-radius:7px;display:grid;place-items:center;}
+    .view-toggle button svg{width:17px;height:17px;display:block;}
+    .view-toggle button.on{background:var(--accent-soft);color:var(--accent);}
+    .count-line{font-size:13.5px;color:var(--muted);margin:0 0 14px;}
+    .count-line b{color:var(--fg);}
+
+    /* ============ JOB CARDS ============ */
+    .jobs.list{display:flex;flex-direction:column;gap:12px;}
+    .jobs.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+    .job{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      padding:17px 19px;transition:.12s;box-shadow:var(--shadow);}
+    .job:hover{border-color:#cfd8e6;box-shadow:var(--shadow-lg);transform:translateY(-1px);}
+    .job .jtop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+    .job h4{margin:0;font-size:16.5px;font-weight:700;letter-spacing:-.01em;}
+    .job .company{font-size:13.5px;color:var(--muted);margin-top:3px;}
+    .salary{font-size:15px;font-weight:800;color:var(--green);white-space:nowrap;font-variant-numeric:tabular-nums;}
+    .salary.none{color:var(--faint);font-weight:600;font-size:13px;}
+    .jtags{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px;}
+    .tag{font-size:12px;padding:4px 10px;border-radius:7px;background:var(--surface-2);
+      border:1px solid var(--line);color:var(--muted);font-weight:500;}
+    .tag.fmt{color:var(--accent);border-color:transparent;background:var(--accent-soft);}
+    .tag.cat{color:var(--purple);border-color:transparent;background:var(--purple-soft);}
+    .jfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;
+      padding-top:14px;border-top:1px solid var(--line);}
+    .source{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);min-width:0;}
+    .savatar{width:30px;height:30px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;}
+    .source .stype{font-size:11.5px;color:var(--faint);margin-top:1px;}
+    .source .snm{font-weight:700;color:var(--fg);}
+    .apply{font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+    .apply:hover{color:var(--accent-2);}
+    .apply svg{width:14px;height:14px;}
+
+    /* ============ TABLES (catalog / rating) ============ */
+    .catalog-layout{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start;}
+    .side-cats{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px;box-shadow:var(--shadow);position:sticky;top:78px;}
+    .side-cats button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:transparent;
+      text-align:left;padding:9px 11px;border-radius:9px;font-size:14px;color:var(--muted);cursor:pointer;font-weight:600;transition:.12s;}
+    .side-cats button:hover{background:var(--surface-2);color:var(--fg);}
+    .side-cats button.on{background:var(--accent-soft);color:var(--accent);}
+    .side-cats button .n{font-size:12px;color:var(--faint);font-weight:600;font-variant-numeric:tabular-nums;}
+    .side-cats button.on .n{color:var(--accent);}
+
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+    table{width:100%;border-collapse:collapse;}
+    thead th{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;
+      text-align:right;padding:13px 16px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;
+      border-bottom:1px solid var(--line);background:var(--surface-2);}
+    thead th:first-child{text-align:left;}
+    thead th .arr{color:var(--accent);font-size:9px;margin-left:3px;}
+    tbody td{padding:13px 16px;border-bottom:1px solid var(--line);text-align:right;
+      font-variant-numeric:tabular-nums;font-size:14.5px;white-space:nowrap;color:var(--fg);}
+    tbody tr:last-child td{border-bottom:0;}
+    tbody td:first-child{text-align:left;}
+    tbody tr{transition:background .12s ease;}
+    tbody tr:hover{background:var(--surface-2);}
+    .rank{color:var(--faint);font-weight:700;width:34px;}
+    .ch{display:flex;align-items:center;gap:12px;}
+    .ava{width:40px;height:40px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;font-weight:800;font-size:16px;color:#fff;}
+    .ch .nm{color:var(--fg);font-weight:700;}
+    .ch .u{display:block;color:var(--muted);font-weight:500;font-size:12.5px;margin-top:1px;}
+    .badge{display:inline-block;padding:3px 9px;border-radius:7px;font-size:12.5px;font-weight:700;}
+    .up{background:var(--green-soft);color:var(--green);} .down{background:var(--red-soft);color:var(--red);}
+    .flat{color:var(--faint);font-weight:600;}
+    .er-hi{background:var(--green-soft);color:var(--green);}
+    .er-mid{background:var(--accent-soft);color:var(--accent);}
+    .er-lo{background:var(--surface-2);color:var(--muted);}
+
+    /* ============ SITES ============ */
+    .sites{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+    .site{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.12s;box-shadow:var(--shadow);}
+    .site:hover{border-color:#cfd8e6;box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+    .site .sh{display:flex;align-items:center;gap:13px;}
+    .site .ico{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:17px;font-weight:800;color:#fff;}
+    .site h4{margin:0;font-size:16.5px;}
+    .site .dom{font-size:13px;color:var(--muted);margin-top:2px;}
+    .site .smetrics{display:flex;gap:22px;margin-top:18px;}
+    .site .smetrics .mv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;}
+    .site .smetrics .mk{font-size:11.5px;color:var(--faint);font-weight:600;margin-top:2px;}
+
+    .muted{color:var(--faint);}
+    .state{padding:56px 20px;text-align:center;color:var(--muted);}
+    .hidden{display:none !important;}
+
+    /* ============ MODAL ============ */
+    .overlay{position:fixed;inset:0;background:rgba(13,20,36,.4);backdrop-filter:blur(3px);
+      display:none;align-items:center;justify-content:center;padding:20px;z-index:60;}
+    .overlay.open{display:flex;}
+    .modal{width:100%;max-width:440px;background:var(--surface);border-radius:18px;padding:26px;box-shadow:var(--shadow-lg);}
+    .modal h2{margin:0 0 5px;font-size:19px;}
+    .modal p{margin:0 0 18px;color:var(--muted);font-size:13.5px;}
+    .modal label{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin:14px 0 6px;}
+    .modal input{width:100%;height:42px;padding:0 13px;background:var(--surface-2);border:1px solid var(--line);
+      border-radius:10px;color:var(--fg);font-size:15px;outline:none;}
+    .modal input:focus{background:#fff;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+    .modal .mrow{display:flex;gap:10px;margin-top:22px;}
+    .modal .mrow .btn{flex:1;justify-content:center;}
+
+    @media(max-width:960px){
+      nav{display:none;}
+      .stats{grid-template-columns:repeat(2,1fr);}
+      .feed-layout,.catalog-layout{grid-template-columns:1fr;}
+      .filters,.side-cats{position:static;}
+      .jobs.grid{grid-template-columns:1fr;}
+      .sites{grid-template-columns:1fr;}
+      .hide-sm{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hbar">
+      <div class="brand">
+        <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+        TG<b>Jobs</b>
+      </div>
+      <nav id="nav">
+        <a data-tab="feed" class="active">Лента вакансий</a>
+        <a data-tab="channels">Каталог каналов</a>
+        <a data-tab="sites">Сайты работы</a>
+        <a data-tab="rating">Рейтинг</a>
+      </nav>
+      <div class="hsearch">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" placeholder="Поиск вакансий" />
+      </div>
+      <button class="btn" id="addBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Добавить источник
+      </button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- ============= FEED ============= -->
+    <section id="view-feed">
+      <div class="page-head">
+        <h1>Лента вакансий</h1>
+        <p>Единый поток вакансий из 1000+ Telegram-каналов и сайтов поиска работы. Обновляется ежедневно.</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="k">Вакансий по фильтру</div><div class="v" id="sJobs">—</div><div class="s">из общего потока</div></div>
+        <div class="stat"><div class="k">Источников</div><div class="v" id="sSrc">—</div><div class="s">каналов и сайтов</div></div>
+        <div class="stat"><div class="k">Новых за 24 часа</div><div class="v" id="sNew">—</div><div class="s">свежие публикации</div></div>
+        <div class="stat"><div class="k">С указанной зарплатой</div><div class="v" id="sSal">—</div><div class="s">доля от выборки</div></div>
+      </div>
+
+      <div class="feed-layout">
+        <aside class="filters">
+          <h3>Фильтры <a id="resetF">Сбросить</a></h3>
+          <div class="fgroup"><div class="lbl">Направление</div><div class="chips" id="fCat"></div></div>
+          <div class="fgroup"><div class="lbl">Формат работы</div><div class="chips" id="fFmt"></div></div>
+          <div class="fgroup"><div class="lbl">Занятость</div><div class="chips" id="fEmp"></div></div>
+          <div class="fgroup"><div class="lbl">Грейд</div><div class="chips" id="fSen"></div></div>
+          <div class="fgroup"><div class="lbl">Тип источника</div><div class="chips" id="fSrc"></div></div>
+          <div class="fgroup">
+            <div class="lbl">Зарплата от <span class="salary-val" id="salLbl">0 ₽</span></div>
+            <input type="range" id="fSalary" min="0" max="500000" step="20000" value="0" />
+          </div>
+          <div class="fgroup"><label class="frow"><input type="checkbox" id="fOnlySalary" /> Только с зарплатой</label></div>
+        </aside>
+
+        <div>
+          <div class="chead">
+            <div class="grow"></div>
+            <select class="sel" id="sortJobs">
+              <option value="new">Сначала новые</option>
+              <option value="salary">Выше зарплата</option>
+              <option value="reach">Охватнее источник</option>
+            </select>
+            <div class="view-toggle">
+              <button data-v="list" class="on" title="Списком"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+              <button data-v="grid" title="Плиткой"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
+            </div>
+          </div>
+          <div class="count-line" id="feedCount"></div>
+          <div class="jobs list" id="jobs"></div>
+          <div class="state hidden" id="jobsEmpty">Ничего не найдено — попробуйте ослабить фильтры.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= CATALOG ============= -->
+    <section id="view-channels" class="hidden">
+      <div class="page-head"><h1>Каталог каналов</h1><p>Telegram-каналы с вакансиями и ежедневной статистикой охвата. Качество источника — сигнал доверия.</p></div>
+      <div class="catalog-layout">
+        <aside class="side-cats" id="sideCats"></aside>
+        <div class="card">
+          <table id="chTbl">
+            <thead><tr>
+              <th style="width:34px"></th>
+              <th data-k="title">Канал</th>
+              <th data-k="subs">Подписчики</th>
+              <th data-k="g" class="hide-sm">Рост 7д</th>
+              <th data-k="views" class="hide-sm">Ср. охват</th>
+              <th data-k="er">ER</th>
+              <th data-k="jobs">Вакансий</th>
+            </tr></thead>
+            <tbody id="chRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= SITES ============= -->
+    <section id="view-sites" class="hidden">
+      <div class="page-head"><h1>Сайты поиска работы</h1><p>Площадки-агрегаторы вакансий. Метрики и вакансии по каждому источнику попадают в общую ленту.</p></div>
+      <div class="sites" id="siteCards"></div>
+    </section>
+
+    <!-- ============= RATING ============= -->
+    <section id="view-rating" class="hidden">
+      <div class="page-head"><h1>Рейтинг каналов</h1><p>Топ источников по числу вакансий за последние 30 дней — где работы больше всего.</p></div>
+      <div class="card">
+        <table id="rtTbl">
+          <thead><tr>
+            <th style="width:34px"></th>
+            <th>Канал</th>
+            <th class="hide-sm">Направление</th>
+            <th>Вакансий 30д</th>
+            <th class="hide-sm">Ср. охват</th>
+            <th>ER</th>
+          </tr></thead>
+          <tbody id="rtRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============= MODAL ============= -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2>Добавить источник</h2>
+      <p>Telegram-канал появится в каталоге после ближайшего сбора статистики.</p>
+      <label>Канал — @username или ссылка t.me</label>
+      <input id="mUser" placeholder="@durov или https://t.me/durov" autocomplete="off" />
+      <label>Ключ доступа</label>
+      <input id="mKey" type="password" placeholder="ADMIN_KEY" />
+      <div class="mrow">
+        <button class="btn btn-ghost" id="mCancel">Отмена</button>
+        <button class="btn" id="mAdd">Добавить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /* ============ MOCK DATA ============ */
+  const CATS=["IT / Разработка","Дизайн","Маркетинг","Продажи","Аналитика","Менеджмент","Поддержка"];
+  const FORMATS=["Удалёнка","Офис","Гибрид"];
+  const EMPLOY=["Полная","Частичная","Проект","Стажировка"];
+  const SENIOR=["Intern","Junior","Middle","Senior","Lead"];
+  const SRCTYPE=["Telegram-канал","Сайт работы"];
+
+  const CHANNELS=[
+    {id:1,username:"remote_it_jobs",title:"Remote IT Jobs",cat:"IT / Разработка",subs:184200,g:3200,views:42000,er:22.8,jobs:312},
+    {id:2,username:"habr_career_live",title:"Хабр Карьера Live",cat:"IT / Разработка",subs:96500,g:-540,views:18800,er:19.5,jobs:201},
+    {id:3,username:"design_hunters",title:"Design Hunters",cat:"Дизайн",subs:74100,g:1980,views:21500,er:29.0,jobs:140},
+    {id:4,username:"smm_vacancies",title:"SMM Вакансии",cat:"Маркетинг",subs:61200,g:820,views:9300,er:15.2,jobs:176},
+    {id:5,username:"data_jobs_ru",title:"Data & Analytics Jobs",cat:"Аналитика",subs:53800,g:1440,views:14100,er:26.2,jobs:98},
+    {id:6,username:"sales_force_ru",title:"Продажи и B2B",cat:"Продажи",subs:38900,g:-210,views:5200,er:13.4,jobs:122},
+    {id:7,username:"product_lead",title:"Product & Project",cat:"Менеджмент",subs:44600,g:610,views:11200,er:25.1,jobs:73},
+    {id:8,username:"support_jobs",title:"Support Desk Jobs",cat:"Поддержка",subs:21300,g:90,views:3100,er:14.6,jobs:64},
+    {id:9,username:"frontend_works",title:"Frontend Works",cat:"IT / Разработка",subs:71200,g:1120,views:16400,er:23.0,jobs:188},
+    {id:10,username:"marketing_hr",title:"Маркетинг HR",cat:"Маркетинг",subs:33400,g:240,views:4800,er:14.4,jobs:91},
+  ];
+
+  const SITES=[
+    {id:101,name:"hh.ru",dom:"hh.ru",ico:"hh",color:"#d6001c",jobs:842,daily:120,traffic:"58M / мес"},
+    {id:102,name:"Хабр Карьера",dom:"career.habr.com",ico:"ХК",color:"#1a1a1a",jobs:318,daily:44,traffic:"7M / мес"},
+    {id:103,name:"GeekJob",dom:"geekjob.ru",ico:"GJ",color:"#6c5ce7",jobs:154,daily:21,traffic:"1.2M / мес"},
+    {id:104,name:"LinkedIn",dom:"linkedin.com",ico:"in",color:"#0a66c2",jobs:506,daily:73,traffic:"310M / мес"},
+    {id:105,name:"Getmatch",dom:"getmatch.ru",ico:"gm",color:"#16a34a",jobs:89,daily:9,traffic:"600K / мес"},
+    {id:106,name:"Telegram-каналы",dom:"t.me",ico:"TG",color:"#2563eb",jobs:1186,daily:210,traffic:"агрегировано"},
+  ];
+
+  const COMPANIES=["Yandex","Avito","Tinkoff","Ozon","VK","Wildberries","Sber","2GIS","Kaspersky","inDrive","Skyeng","Lamoda"];
+  const TITLES={
+    "IT / Разработка":["Frontend-разработчик","Backend-инженер (Go)","Python-разработчик","DevOps-инженер","iOS-разработчик","Fullstack JS","QA Automation"],
+    "Дизайн":["Продуктовый дизайнер","UX/UI Designer","Графический дизайнер","Motion-дизайнер"],
+    "Маркетинг":["SMM-менеджер","Performance-маркетолог","Контент-маркетолог","Бренд-менеджер"],
+    "Продажи":["Менеджер по продажам","Account Manager","Sales Development Rep"],
+    "Аналитика":["Data Analyst","Продуктовый аналитик","BI-разработчик","Data Scientist"],
+    "Менеджмент":["Product Manager","Project Manager","Team Lead"],
+    "Поддержка":["Специалист поддержки","Customer Success","Оператор чата"],
+  };
+  const STACKS=["React","TypeScript","Python","Go","SQL","Figma","Docker","Kubernetes","PostgreSQL","Node.js","Swift","ClickHouse","Tableau","Kafka"];
+
+  let seed=42; const rnd=()=>(seed=(seed*1103515245+12345)&0x7fffffff)/0x7fffffff;
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const hueOf=s=>{let h=0;for(const c of(s||""))h=(h*31+c.charCodeAt(0))%360;return h;};
+
+  function genJobs(n){
+    const out=[];
+    for(let i=0;i<n;i++){
+      const fromSite=rnd()<0.32;
+      const src=fromSite?pick(SITES.slice(0,5)):pick(CHANNELS);
+      const cat=src.cat||pick(CATS);
+      const hasSal=rnd()<0.62, base=60000+Math.floor(rnd()*16)*20000;
+      out.push({
+        id:i,title:pick(TITLES[cat]||TITLES["IT / Разработка"]),company:pick(COMPANIES),cat,
+        format:pick(FORMATS),employment:pick(EMPLOY),seniority:pick(SENIOR),
+        srcType:fromSite?"Сайт работы":"Telegram-канал",
+        salMin:hasSal?base:null,salMax:hasSal?base+40000+Math.floor(rnd()*8)*20000:null,
+        tags:[pick(STACKS),pick(STACKS),pick(STACKS)].filter((v,idx,a)=>a.indexOf(v)===idx),
+        hoursAgo:Math.floor(rnd()*96),source:src,fromSite,
+      });
+    }
+    return out;
+  }
+  const JOBS=genJobs(160);
+
+  /* ============ HELPERS ============ */
+  const compact=n=>n==null?"—":Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n);
+  const fmtFull=n=>n==null?"—":Intl.NumberFormat("ru").format(n);
+  const money=n=>Intl.NumberFormat("ru").format(n);
+  const salaryStr=j=>j.salMin==null?'<span class="salary none">з/п не указана</span>':`<span class="salary">${money(j.salMin)}–${money(j.salMax)} ₽</span>`;
+  function ago(h){if(h<1)return"только что";if(h<24)return h+" ч назад";const d=Math.floor(h/24);return d+(d===1?" день":d<5?" дня":" дней")+" назад";}
+  const arrowSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+
+  /* ============ FILTER STATE ============ */
+  const F={cat:new Set(),fmt:new Set(),emp:new Set(),sen:new Set(),src:new Set(),salary:0,onlySalary:false,q:"",sort:"new",view:"list"};
+
+  function chipRow(host,items,set){
+    host.innerHTML=items.map(x=>`<span class="chip" data-v="${x}">${x}</span>`).join("");
+    host.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{
+      const v=c.dataset.v;
+      if(set.has(v)){set.delete(v);c.classList.remove("on");}else{set.add(v);c.classList.add("on");}
+      renderFeed();
+    });
+  }
+
+  function renderFeed(){
+    const list=JOBS.filter(j=>{
+      if(F.cat.size&&!F.cat.has(j.cat))return false;
+      if(F.fmt.size&&!F.fmt.has(j.format))return false;
+      if(F.emp.size&&!F.emp.has(j.employment))return false;
+      if(F.sen.size&&!F.sen.has(j.seniority))return false;
+      if(F.src.size&&!F.src.has(j.srcType))return false;
+      if(F.onlySalary&&j.salMin==null)return false;
+      if(F.salary>0&&(j.salMax||0)<F.salary)return false;
+      if(F.q){const hay=(j.title+" "+j.company+" "+j.tags.join(" ")).toLowerCase();if(!hay.includes(F.q))return false;}
+      return true;
+    });
+    list.sort((a,b)=>{
+      if(F.sort==="new")return a.hoursAgo-b.hoursAgo;
+      if(F.sort==="salary")return(b.salMax||0)-(a.salMax||0);
+      if(F.sort==="reach")return(b.source.subs||0)-(a.source.subs||0);
+      return 0;
+    });
+
+    const box=document.getElementById("jobs");
+    box.className="jobs "+F.view;
+    document.getElementById("jobsEmpty").classList.toggle("hidden",list.length>0);
+    document.getElementById("feedCount").innerHTML=`Показано <b>${list.length}</b> из ${JOBS.length} вакансий`;
+
+    box.innerHTML=list.map(j=>{
+      const s=j.source,nm=s.title||s.name,init=(nm||"?").charAt(0).toUpperCase();
+      const col=j.fromSite?s.color:`hsl(${hueOf(s.username)} 55% 45%)`;
+      const link=j.fromSite?`https://${s.dom}`:`https://t.me/${s.username}`;
+      return `<div class="job">
+        <div class="jtop">
+          <div><h4>${j.title}</h4><div class="company">${j.company}</div></div>
+          ${salaryStr(j)}
+        </div>
+        <div class="jtags">
+          <span class="tag cat">${j.cat}</span>
+          <span class="tag fmt">${j.format}</span>
+          <span class="tag">${j.seniority}</span>
+          <span class="tag">${j.employment}</span>
+          ${j.tags.map(t=>`<span class="tag">${t}</span>`).join("")}
+        </div>
+        <div class="jfoot">
+          <div class="source">
+            <div class="savatar" style="background:${col}">${init}</div>
+            <div style="min-width:0"><span class="snm">${nm}</span><div class="stype">${j.srcType} · ${ago(j.hoursAgo)}</div></div>
+          </div>
+          <a class="apply" href="${link}" target="_blank" rel="noopener">Открыть источник ${arrowSvg}</a>
+        </div>
+      </div>`;
+    }).join("");
+
+    const srcSet=new Set(list.map(j=>(j.fromSite?"s":"c")+j.source.id));
+    document.getElementById("sJobs").textContent=list.length;
+    document.getElementById("sSrc").textContent=srcSet.size;
+    document.getElementById("sNew").textContent=list.filter(j=>j.hoursAgo<24).length;
+    document.getElementById("sSal").textContent=list.filter(j=>j.salMin!=null).length;
+  }
+
+  /* ============ CATALOG ============ */
+  let chSort="subs",chDesc=true,activeCat="all";
+  const growthBadge=n=>(n==null||n===0)?'<span class="flat">0</span>':`<span class="badge ${n>0?"up":"down"}">${n>0?"+":"−"}${compact(Math.abs(n))}</span>`;
+  const erBadge=v=>`<span class="badge ${v>=24?"er-hi":v>=15?"er-mid":"er-lo"}">${v}%</span>`;
+
+  function renderSideCats(){
+    const counts={}; CHANNELS.forEach(c=>counts[c.cat]=(counts[c.cat]||0)+1);
+    const items=[["all","Все направления",CHANNELS.length],...CATS.filter(c=>counts[c]).map(c=>[c,c,counts[c]])];
+    document.getElementById("sideCats").innerHTML=items.map(([k,label,n])=>
+      `<button data-c="${k}" class="${k===activeCat?"on":""}">${label}<span class="n">${n}</span></button>`).join("");
+    document.querySelectorAll("#sideCats button").forEach(b=>b.onclick=()=>{activeCat=b.dataset.c;renderSideCats();renderChannels();});
+  }
+  function renderChannels(){
+    const term=(document.getElementById("q").value||"").trim().toLowerCase();
+    const list=CHANNELS.filter(c=>activeCat==="all"||c.cat===activeCat)
+      .filter(c=>!term||c.title.toLowerCase().includes(term)||c.username.includes(term))
+      .sort((a,b)=>{const av=a[chSort]??-Infinity,bv=b[chSort]??-Infinity;return chDesc?bv-av:av-bv;});
+    document.getElementById("chRows").innerHTML=list.map((c,i)=>`<tr>
+      <td class="rank">${i+1}</td>
+      <td><div class="ch"><div class="ava" style="background:hsl(${hueOf(c.username)} 55% 45%)">${c.title.charAt(0)}</div>
+        <div><a class="nm" href="https://t.me/${c.username}" target="_blank" rel="noopener">${c.title}</a><span class="u">@${c.username}</span></div></div></td>
+      <td title="${fmtFull(c.subs)}">${compact(c.subs)}</td>
+      <td class="hide-sm">${growthBadge(c.g)}</td>
+      <td class="hide-sm" title="${fmtFull(c.views)}">${compact(c.views)}</td>
+      <td>${erBadge(c.er)}</td>
+      <td><strong>${c.jobs}</strong></td>
+    </tr>`).join("");
+    document.querySelectorAll("#chTbl thead th[data-k]").forEach(th=>{
+      const on=th.dataset.k===chSort;
+      th.innerHTML=th.textContent.replace(/[▼▲]/g,"").trim()+(on?` <span class="arr">${chDesc?"▼":"▲"}</span>`:"");
+    });
+  }
+
+  /* ============ RATING ============ */
+  function renderRating(){
+    const list=[...CHANNELS].sort((a,b)=>b.jobs-a.jobs);
+    document.getElementById("rtRows").innerHTML=list.map((c,i)=>`<tr>
+      <td class="rank">${i+1}</td>
+      <td><div class="ch"><div class="ava" style="background:hsl(${hueOf(c.username)} 55% 45%)">${c.title.charAt(0)}</div>
+        <div><a class="nm" href="https://t.me/${c.username}" target="_blank" rel="noopener">${c.title}</a><span class="u">@${c.username}</span></div></div></td>
+      <td class="hide-sm"><span class="tag cat">${c.cat}</span></td>
+      <td><strong>${c.jobs}</strong></td>
+      <td class="hide-sm" title="${fmtFull(c.views)}">${compact(c.views)}</td>
+      <td>${erBadge(c.er)}</td>
+    </tr>`).join("");
+  }
+
+  /* ============ SITES ============ */
+  function renderSites(){
+    document.getElementById("siteCards").innerHTML=SITES.map(s=>`<div class="site" data-go="feed">
+      <div class="sh"><div class="ico" style="background:${s.color}">${s.ico}</div><div><h4>${s.name}</h4><div class="dom">${s.dom}</div></div></div>
+      <div class="smetrics">
+        <div><div class="mv">${compact(s.jobs)}</div><div class="mk">вакансий</div></div>
+        <div><div class="mv">+${s.daily}</div><div class="mk">в день</div></div>
+        <div><div class="mv">${s.traffic}</div><div class="mk">трафик</div></div>
+      </div>
+    </div>`).join("");
+    document.querySelectorAll(".site").forEach(el=>el.onclick=()=>switchTab("feed"));
+  }
+
+  /* ============ NAV ============ */
+  function switchTab(tab){
+    document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("active",a.dataset.tab===tab));
+    ["feed","channels","sites","rating"].forEach(v=>document.getElementById("view-"+v).classList.toggle("hidden",v!==tab));
+    document.getElementById("q").placeholder=tab==="channels"?"Поиск по каналу":"Поиск вакансий";
+  }
+  document.querySelectorAll("#nav a").forEach(a=>a.onclick=()=>switchTab(a.dataset.tab));
+
+  /* ============ WIRE UP ============ */
+  chipRow(document.getElementById("fCat"),CATS,F.cat);
+  chipRow(document.getElementById("fFmt"),FORMATS,F.fmt);
+  chipRow(document.getElementById("fEmp"),EMPLOY,F.emp);
+  chipRow(document.getElementById("fSen"),SENIOR,F.sen);
+  chipRow(document.getElementById("fSrc"),SRCTYPE,F.src);
+
+  document.getElementById("fSalary").oninput=e=>{F.salary=+e.target.value;document.getElementById("salLbl").textContent=money(F.salary)+" ₽";renderFeed();};
+  document.getElementById("fOnlySalary").onchange=e=>{F.onlySalary=e.target.checked;renderFeed();};
+  document.getElementById("q").oninput=e=>{F.q=e.target.value.trim().toLowerCase();renderFeed();renderChannels();};
+  document.getElementById("sortJobs").onchange=e=>{F.sort=e.target.value;renderFeed();};
+  document.querySelectorAll(".view-toggle button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll(".view-toggle button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");F.view=b.dataset.v;renderFeed();
+  });
+  document.getElementById("resetF").onclick=()=>{
+    F.cat.clear();F.fmt.clear();F.emp.clear();F.sen.clear();F.src.clear();F.salary=0;F.onlySalary=false;
+    document.querySelectorAll(".filters .chip").forEach(c=>c.classList.remove("on"));
+    document.getElementById("fSalary").value=0;document.getElementById("salLbl").textContent="0 ₽";
+    document.getElementById("fOnlySalary").checked=false;renderFeed();
+  };
+  document.querySelectorAll("#chTbl thead th[data-k]").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;if(chSort===k)chDesc=!chDesc;else{chSort=k;chDesc=true;}renderChannels();
+  });
+
+  /* ============ MODAL ============ */
+  const overlay=document.getElementById("overlay");
+  document.getElementById("addBtn").onclick=()=>overlay.classList.add("open");
+  document.getElementById("mCancel").onclick=()=>overlay.classList.remove("open");
+  overlay.onclick=e=>{if(e.target===overlay)overlay.classList.remove("open");};
+  document.getElementById("mAdd").onclick=()=>{overlay.classList.remove("open");};
+
+  renderFeed();renderSideCats();renderChannels();renderRating();renderSites();
+  </script>
+</body>
+</html>
