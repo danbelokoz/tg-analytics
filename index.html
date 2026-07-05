@@ -1,289 +1,306 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TG Analytics — статистика Telegram-каналов</title>
-  <style>
-    :root{
-      --bg:#0a0b0d; --surface:#131519; --surface-2:#181b20; --line:#23262d;
-      --fg:#e7e9ec; --muted:#8a909a; --faint:#5b616b;
-      --accent:#229ED9; --accent-2:#1b8ac0;
-      --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
-      --radius:16px; --radius-sm:10px;
-      font-synthesis:none;
-    }
-    *{box-sizing:border-box;}
-    html,body{margin:0;background:var(--bg);color:var(--fg);
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      -webkit-font-smoothing:antialiased;}
-    body{background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(34,158,217,.08), transparent 60%),
-      radial-gradient(900px 500px at 0% 0%, rgba(34,158,217,.05), transparent 55%),
-      var(--bg);
-      min-height:100vh;}
-    .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 80px;}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Telemetria — каталог Telegram-каналов</title>
+<meta name="description" content="Живая аналитика Telegram-каналов: подписчики, рост аудитории, вовлечённость и охваты постов в одном каталоге." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f7f8fa;color:#18181f;font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
 
-    /* Top bar */
-    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
-    .brand{display:flex;align-items:center;gap:12px;}
-    .logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;
-      background:linear-gradient(135deg,var(--accent),#1466a0);box-shadow:0 6px 20px rgba(34,158,217,.35);
-      font-size:22px;}
-    .brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em;}
-    .brand p{margin:2px 0 0;font-size:12.5px;color:var(--muted);}
-    .btn{appearance:none;border:0;cursor:pointer;font:inherit;font-weight:600;
-      padding:11px 18px;border-radius:12px;color:#fff;
-      background:linear-gradient(135deg,var(--accent),var(--accent-2));
-      box-shadow:0 6px 18px rgba(34,158,217,.3);transition:transform .12s ease,box-shadow .12s ease;}
-    .btn:hover{transform:translateY(-1px);box-shadow:0 9px 24px rgba(34,158,217,.42);}
-    .btn:active{transform:translateY(0);}
-    .btn-ghost{background:var(--surface-2);border:1px solid var(--line);color:var(--fg);box-shadow:none;}
-    .btn-ghost:hover{background:#1f232a;box-shadow:none;}
+/* Header */
+header{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid #e9eaf0;position:sticky;top:0;z-index:10}
+.nav{display:flex;align-items:center;gap:32px;height:60px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
+.logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#2AABEE,#6366f1);display:inline-flex;align-items:center;justify-content:center;font-style:normal;color:#fff;font-size:13px}
+.nav .active{font-weight:800;color:#18181f;font-size:13.5px}
+.nav .cta{margin-left:auto;background:#18181f;color:#fff;border:none;border-radius:9px;padding:9px 18px;font:700 13px 'Manrope';cursor:pointer;transition:.15s}
+.nav .cta:hover{background:#2b2b36}
 
-    /* Stats */
-    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
-    .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
-    .stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-    .stat .v{font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
-    .stat .s{font-size:12px;color:var(--faint);margin-top:2px;}
+/* Hero + KPIs */
+.hero{padding:56px 0 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+h1{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.02em}
+.sub{color:#6b6f7e;font-size:15px;margin-top:8px;max-width:480px;line-height:1.6}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(140px,1fr));gap:12px}
+.kpi{background:#fff;border:1px solid #e9eaf0;border-radius:14px;padding:14px 18px;box-shadow:0 1px 2px rgba(24,24,31,.04)}
+.kpi .k{font-size:11.5px;font-weight:700;color:#9095a5;text-transform:uppercase;letter-spacing:.05em}
+.kpi .v{font-size:22px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;font-weight:700;color:#16a34a;margin-top:2px;min-height:15px}
+.kpi .d.dn{color:#dc2626}
 
-    /* Search */
-    .search{position:relative;margin-bottom:14px;}
-    .search input{width:100%;padding:13px 16px 13px 44px;background:var(--surface);
-      border:1px solid var(--line);border-radius:14px;color:var(--fg);font-size:15px;outline:none;
-      transition:border-color .15s ease,box-shadow .15s ease;}
-    .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,158,217,.15);}
-    .search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:var(--faint);}
+/* Search + filters */
+.toolbar{display:flex;gap:12px;align-items:center;padding:28px 0 8px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px}
+.search input{width:100%;padding:10px 14px 10px 38px;border:1px solid #e9eaf0;border-radius:999px;background:#fff;font:600 13.5px 'Manrope';color:#18181f;outline:none;transition:.15s}
+.search input:focus{border-color:#2AABEE;box-shadow:0 0 0 3px rgba(42,171,238,.15)}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9095a5}
+.filters{display:flex;gap:8px;padding:12px 0 20px;flex-wrap:wrap}
+.chip{padding:8px 16px;border-radius:999px;border:1px solid #e9eaf0;background:#fff;font:600 13px 'Manrope';color:#6b6f7e;cursor:pointer;transition:.15s;white-space:nowrap}
+.chip:hover{border-color:#c7cad6}
+.chip.on{background:#2AABEE;border-color:#2AABEE;color:#fff;box-shadow:0 4px 12px rgba(42,171,238,.3)}
 
-    /* Table card */
-    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
-    table{width:100%;border-collapse:collapse;}
-    thead th{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;
-      text-align:right;padding:14px 16px;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;
-      border-bottom:1px solid var(--line);background:var(--surface-2);}
-    thead th:first-child{text-align:left;}
-    thead th .arrow{opacity:0;margin-left:4px;font-size:9px;}
-    thead th.sorted .arrow{opacity:1;}
-    tbody td{padding:14px 16px;border-bottom:1px solid var(--line);text-align:right;
-      font-variant-numeric:tabular-nums;font-size:15px;white-space:nowrap;}
-    tbody tr:last-child td{border-bottom:0;}
-    tbody td:first-child{text-align:left;}
-    tbody tr{transition:background .12s ease;}
-    tbody tr:hover{background:var(--surface-2);}
+/* Grid + cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;padding-bottom:40px}
+.card{background:#fff;border:1px solid #e9eaf0;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(24,24,31,.04);transition:.2s;cursor:pointer;text-decoration:none;color:inherit;display:block}
+.card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(24,24,31,.09);border-color:#d9dce6}
+.chead{display:flex;align-items:center;gap:12px}
+.ava{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;background-size:cover;background-position:center}
+.chead .t{font-weight:800;font-size:15.5px;line-height:1.2}
+.chead .c{font-size:12.5px;color:#9095a5;font-weight:600;margin-top:2px}
+.badge{margin-left:auto;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;white-space:nowrap;flex-shrink:0}
+.badge.up{background:#ecfdf5;color:#059669}
+.badge.down{background:#fef2f2;color:#dc2626}
+.badge.flat{background:#f1f2f6;color:#9095a5}
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px}
+.m .k{font-size:11px;font-weight:700;color:#9095a5;text-transform:uppercase;letter-spacing:.04em}
+.m .v{font-size:16px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+.spark{margin-top:14px;width:100%;display:block}
+.spark polyline{fill:none;stroke:#2AABEE;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.spark .area{fill:url(#g2);stroke:none}
 
-    .ch{display:flex;align-items:center;gap:12px;}
-    .ava{width:38px;height:38px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
-      font-weight:700;font-size:15px;color:#fff;}
-    .ch a{color:var(--fg);text-decoration:none;font-weight:600;}
-    .ch .u{display:block;color:var(--muted);font-weight:400;font-size:12.5px;margin-top:1px;}
-    .ch a:hover{color:var(--accent);}
+/* States */
+.state{padding:60px 20px;text-align:center;color:#9095a5;font-weight:600;font-size:15px}
+footer{padding:44px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 
-    .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12.5px;font-weight:600;}
-    .up{background:rgba(34,197,94,.14);color:#5fe39a;}
-    .down{background:rgba(239,68,68,.14);color:#ff8585;}
-    .flat{color:var(--faint);}
-    .er-hi{background:rgba(34,197,94,.14);color:#5fe39a;}
-    .er-mid{background:rgba(34,158,217,.16);color:#6fc6ec;}
-    .er-lo{background:rgba(138,144,154,.14);color:var(--muted);}
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(24,24,31,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.overlay.open{display:flex}
+.modal{width:100%;max-width:440px;background:#fff;border-radius:18px;padding:24px;box-shadow:0 30px 80px rgba(24,24,31,.35)}
+.modal h2{font-size:18px;font-weight:800}
+.modal p{margin:4px 0 18px;color:#6b6f7e;font-size:13px;line-height:1.5}
+.modal label{display:block;font-size:12.5px;font-weight:700;color:#6b6f7e;margin:14px 0 6px}
+.modal input{width:100%;padding:11px 14px;background:#f7f8fa;border:1px solid #e9eaf0;border-radius:11px;font:600 14.5px 'Manrope';color:#18181f;outline:none}
+.modal input:focus{border-color:#2AABEE;box-shadow:0 0 0 3px rgba(42,171,238,.15)}
+.modal .row{display:flex;gap:10px;margin-top:22px}
+.modal .row button{flex:1;border:none;border-radius:10px;padding:11px;font:700 13.5px 'Manrope';cursor:pointer}
+.modal .row .primary{background:#2AABEE;color:#fff}
+.modal .row .primary:hover{background:#1f97d6}
+.modal .row .ghost{background:#f1f2f6;color:#18181f}
+.msg{font-size:13px;font-weight:600;margin-top:14px;min-height:18px}
+.msg.ok{color:#059669}.msg.err{color:#dc2626}
 
-    .muted{color:var(--faint);}
-    .state{padding:48px 20px;text-align:center;color:var(--muted);}
-
-    /* Modal */
-    .overlay{position:fixed;inset:0;background:rgba(5,6,8,.66);backdrop-filter:blur(4px);
-      display:none;align-items:center;justify-content:center;padding:20px;z-index:50;}
-    .overlay.open{display:flex;}
-    .modal{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--line);
-      border-radius:20px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.6);}
-    .modal h2{margin:0 0 4px;font-size:18px;}
-    .modal p{margin:0 0 18px;color:var(--muted);font-size:13px;}
-    .modal label{display:block;font-size:12.5px;color:var(--muted);margin:14px 0 6px;}
-    .modal input{width:100%;padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);
-      border-radius:12px;color:var(--fg);font-size:15px;outline:none;}
-    .modal input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(34,158,217,.15);}
-    .modal .row{display:flex;gap:10px;margin-top:22px;}
-    .modal .row .btn{flex:1;text-align:center;}
-    .msg{font-size:13px;margin-top:14px;min-height:18px;}
-    .msg.ok{color:#5fe39a;} .msg.err{color:#ff8585;}
-
-    @media(max-width:640px){
-      .stats{grid-template-columns:1fr;}
-      .hide-sm{display:none;}
-      .stat .v{font-size:22px;}
-    }
-  </style>
+@media(max-width:640px){
+  .kpis{grid-template-columns:1fr 1fr;width:100%}
+  .grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <div class="logo">📊</div>
-        <div>
-          <h1>TG Analytics</h1>
-          <p>Статистика публичных Telegram-каналов · обновляется каждые 6 часов</p>
-        </div>
-      </div>
-      <button class="btn" id="addBtn">＋ Добавить канал</button>
+<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2AABEE" stop-opacity=".25"/><stop offset="100%" stop-color="#2AABEE" stop-opacity="0"/></linearGradient></defs></svg>
+
+<header><div class="wrap nav">
+  <div class="logo"><i>✈</i>Telemetria</div>
+  <span class="active">Каталог</span>
+  <button class="cta" id="addBtn">＋ Добавить канал</button>
+</div></header>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <h1>Каталог Telegram-каналов</h1>
+      <p class="sub">Живая аналитика по отслеживаемым каналам: рост аудитории, вовлечённость и охваты постов в одном месте.</p>
     </div>
+    <div class="kpis" id="kpis"></div>
+  </div>
 
-    <div class="stats" id="stats"></div>
-
+  <div class="toolbar">
     <div class="search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-      <input id="q" placeholder="Поиск по каналу…" />
-    </div>
-
-    <div class="card">
-      <table id="tbl" hidden>
-        <thead>
-          <tr>
-            <th data-k="title">Канал</th>
-            <th data-k="subscribers" class="sorted">Подписчики <span class="arrow">▼</span></th>
-            <th data-k="growth_7d">Рост 7д <span class="arrow">▼</span></th>
-            <th data-k="avg_views" class="hide-sm">Ср. охват <span class="arrow">▼</span></th>
-            <th data-k="err_pct">ER <span class="arrow">▼</span></th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-      <div id="state" class="state">Загрузка…</div>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" placeholder="Поиск по названию или @username…" />
     </div>
   </div>
+  <div class="filters" id="filters"></div>
 
-  <!-- Add modal -->
-  <div class="overlay" id="overlay">
-    <div class="modal">
-      <h2>Добавить канал</h2>
-      <p>Появится в списке после ближайшего сбора (до 6 ч) или ручного запуска парсера.</p>
-      <label>Канал — @username или ссылка t.me</label>
-      <input id="mUser" placeholder="@durov или https://t.me/durov" autocomplete="off" />
-      <label>Ключ доступа</label>
-      <input id="mKey" type="password" placeholder="ADMIN_KEY (запомнится в этом браузере)" />
-      <div class="msg" id="mMsg"></div>
-      <div class="row">
-        <button class="btn-ghost btn" id="mCancel">Отмена</button>
-        <button class="btn" id="mAdd">Добавить</button>
+  <div class="grid" id="grid"></div>
+  <div class="state" id="state">Загрузка…</div>
+
+  <footer>Telemetria © 2026 · Данные наполняются парсером · обновление каждые 6 часов</footer>
+</div>
+
+<!-- Add modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Добавить канал</h2>
+    <p>Появится в каталоге после ближайшего сбора (до 6 ч) или ручного запуска парсера.</p>
+    <label>Канал — @username или ссылка t.me</label>
+    <input id="mUser" placeholder="@durov или https://t.me/durov" autocomplete="off" />
+    <label>Ключ доступа</label>
+    <input id="mKey" type="password" placeholder="ADMIN_KEY (запомнится в этом браузере)" />
+    <div class="msg" id="mMsg"></div>
+    <div class="row">
+      <button class="ghost" id="mCancel">Отмена</button>
+      <button class="primary" id="mAdd">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://jaqhstbeelzciburiqyt.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcWhzdGJlZWx6Y2lidXJpcXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDg3ODcsImV4cCI6MjA5NTg4NDc4N30.RJ9khzIXvNUaxCw8bu-pF8Ye3_8boGCz3vvgUUO_q1E";
+const SB_HEADERS = { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY };
+
+let data = [], sparks = {}, activeCat = "__all__";
+
+const fmtFull = n => n==null ? "—" : Intl.NumberFormat("ru").format(n);
+const compact = n => n==null ? "—" : Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n).replace(".",",");
+const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%360; return h; };
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pct = v => v==null ? "—" : String(v).replace(".",",")+"%";
+const plural = (n,one,few,many) => { const m=n%100, d=n%10; return (m>=11&&m<=14)?many : d===1?one : (d>=2&&d<=4)?few : many; };
+
+// процент недельного роста от базы 7 дней назад
+function growthPct(c){
+  const base = c.subscribers_7d_ago;
+  if(base==null || base<=0 || c.growth_7d==null) return null;
+  return (c.growth_7d/base)*100;
+}
+function growthBadge(c){
+  const p = growthPct(c);
+  if(p==null){
+    if(c.growth_7d==null) return '<span class="badge flat">н/д</span>';
+    const cls = c.growth_7d>0?"up":c.growth_7d<0?"down":"flat", s=c.growth_7d>0?"+":c.growth_7d<0?"−":"";
+    return `<span class="badge ${cls}">${s}${compact(Math.abs(c.growth_7d))}</span>`;
+  }
+  const cls = p>0.05?"up":p<-0.05?"down":"flat";
+  const s = p>0?"+":p<0?"−":"";
+  return `<span class="badge ${cls}">${s}${Math.abs(p).toFixed(1).replace(".",",")}%</span>`;
+}
+
+// спарклайн подписчиков из channel_snapshots (нормализуем в 300×46)
+function sparkSVG(cid){
+  const pts = sparks[cid];
+  if(!pts || pts.length<2) return "";
+  const W=300,H=46,PAD=4;
+  const xs = pts.map((_,i)=> PAD + i*(W-2*PAD)/(pts.length-1));
+  const min = Math.min(...pts), max = Math.max(...pts), span = (max-min)||1;
+  const ys = pts.map(v=> H-PAD - (v-min)/span*(H-2*PAD));
+  const line = xs.map((x,i)=>`${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
+  const area = `${PAD},${H} ${line} ${(W-PAD)},${H}`;
+  return `<svg class="spark" height="46" viewBox="0 0 300 46" preserveAspectRatio="none">
+    <polygon class="area" points="${area}"/><polyline points="${line}"/></svg>`;
+}
+
+function avatar(c){
+  const name = c.title || c.username || "?";
+  const initial = esc(name.trim().charAt(0).toUpperCase());
+  if(c.photo_url) return `<div class="ava" style="background-color:hsl(${hueOf(c.username)} 48% 50%);background-image:url('${esc(c.photo_url)}')"></div>`;
+  return `<div class="ava" style="background:hsl(${hueOf(c.username)} 48% 50%)">${initial}</div>`;
+}
+
+function renderKPIs(){
+  const totalSubs = data.reduce((s,c)=>s+(c.subscribers||0),0);
+  const totalGrowth = data.reduce((s,c)=>s+(c.growth_7d||0),0);
+  const cats = new Set(data.map(c=>c.category).filter(Boolean));
+  const gCls = totalGrowth<0 ? "d dn" : "d";
+  const gSign = totalGrowth>0?"+":totalGrowth<0?"−":"";
+  document.getElementById("kpis").innerHTML = `
+    <div class="kpi"><div class="k">Каналов</div><div class="v">${fmtFull(data.length)}</div><div class="d">${cats.size} ${plural(cats.size,"категория","категории","категорий")}</div></div>
+    <div class="kpi"><div class="k">Аудитория</div><div class="v">${compact(totalSubs)}</div><div class="d">${fmtFull(totalSubs)}</div></div>
+    <div class="kpi"><div class="k">Рост за 7 дней</div><div class="v">${gSign}${compact(Math.abs(totalGrowth))}</div><div class="${gCls}">подписчиков</div></div>`;
+}
+
+function renderFilters(){
+  const cats = [...new Set(data.map(c=>c.category).filter(Boolean))].sort();
+  const chip = (val,label)=>`<button class="chip ${activeCat===val?"on":""}" data-cat="${esc(val)}">${esc(label)}</button>`;
+  const el = document.getElementById("filters");
+  if(!cats.length){ el.innerHTML=""; return; }
+  el.innerHTML = chip("__all__","Все категории") + cats.map(c=>chip(c,c)).join("");
+  el.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ activeCat=b.dataset.cat; renderFilters(); renderGrid(); });
+}
+
+function renderGrid(){
+  const term = document.getElementById("q").value.trim().toLowerCase();
+  const list = data
+    .filter(c=> activeCat==="__all__" || c.category===activeCat)
+    .filter(c=> !term || (c.title||"").toLowerCase().includes(term) || (c.username||"").toLowerCase().includes(term))
+    .sort((a,b)=>(b.subscribers||0)-(a.subscribers||0));
+
+  const grid = document.getElementById("grid"), state = document.getElementById("state");
+  if(!list.length){
+    grid.innerHTML=""; state.hidden=false;
+    state.textContent = data.length ? "Ничего не найдено." : "Пока нет данных. Нажми «Добавить канал» или запусти парсер.";
+    return;
+  }
+  state.hidden = true;
+  grid.innerHTML = list.map(c=>{
+    const name = esc(c.title || c.username);
+    const sub = [c.category, "@"+c.username].filter(Boolean).map(esc).join(" · ");
+    return `<a class="card" href="https://t.me/${esc(c.username)}" target="_blank" rel="noopener">
+      <div class="chead">${avatar(c)}
+        <div><div class="t">${name}</div><div class="c">${sub}</div></div>
+        ${growthBadge(c)}</div>
+      <div class="metrics">
+        <div class="m"><div class="k">Подписчики</div><div class="v" title="${fmtFull(c.subscribers)}">${compact(c.subscribers)}</div></div>
+        <div class="m"><div class="k">ER</div><div class="v">${pct(c.err_pct)}</div></div>
+        <div class="m"><div class="k">Охват</div><div class="v" title="${fmtFull(c.avg_views)}">${compact(c.avg_views)}</div></div>
       </div>
-    </div>
-  </div>
+      ${sparkSVG(c.id)}
+    </a>`;
+  }).join("");
+}
 
-  <script>
-    const SUPABASE_URL = "https://jaqhstbeelzciburiqyt.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcWhzdGJlZWx6Y2lidXJpcXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDg3ODcsImV4cCI6MjA5NTg4NDc4N30.RJ9khzIXvNUaxCw8bu-pF8Ye3_8boGCz3vvgUUO_q1E";
-
-    let data = [], sortKey = "subscribers", sortDesc = true;
-
-    const fmtFull = n => n==null ? "—" : Intl.NumberFormat("ru").format(n);
-    const compact = n => n==null ? "—" : Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n);
-    const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%360; return h; };
-
-    function growthBadge(n){
-      if(n==null) return '<span class="flat">—</span>';
-      if(n===0) return '<span class="flat">0</span>';
-      const cls = n>0?"up":"down", sign = n>0?"+":"−";
-      return `<span class="badge ${cls}">${sign}${compact(Math.abs(n))}</span>`;
+async function loadSparks(){
+  try{
+    const since = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/channel_snapshots?select=channel_id,snapshot_date,subscribers&snapshot_date=gte.${since}&order=snapshot_date.asc`,{headers:SB_HEADERS});
+    if(!r.ok) return;
+    const rows = await r.json();
+    sparks = {};
+    for(const row of rows){
+      if(row.subscribers==null) continue;
+      (sparks[row.channel_id] ||= []).push(row.subscribers);
     }
-    function erBadge(v){
-      if(v==null) return '<span class="flat">—</span>';
-      const cls = v>=30?"er-hi":v>=8?"er-mid":"er-lo";
-      return `<span class="badge ${cls}">${v}%</span>`;
-    }
+    renderGrid();
+  }catch(e){ /* спарклайны — необязательны */ }
+}
 
-    async function load(){
-      try{
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/channel_latest?select=*&order=subscribers.desc.nullslast`,{
-          headers:{ apikey:SUPABASE_ANON_KEY, Authorization:"Bearer "+SUPABASE_ANON_KEY }
-        });
-        if(!r.ok) throw new Error(r.status+" "+(await r.text()).slice(0,120));
-        data = await r.json();
-        renderStats();
-        if(!data.length){ state.textContent = "Пока нет данных. Нажми «Добавить канал» или запусти парсер."; tbl.hidden=true; state.hidden=false; return; }
-        state.hidden = true; tbl.hidden = false; render();
-      }catch(e){
-        state.textContent = "Ошибка загрузки: "+e.message;
-      }
-    }
+async function load(){
+  const state = document.getElementById("state");
+  try{
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/channel_latest?select=*&order=subscribers.desc.nullslast`,{headers:SB_HEADERS});
+    if(!r.ok) throw new Error(r.status+" "+(await r.text()).slice(0,120));
+    data = await r.json();
+    renderKPIs(); renderFilters(); renderGrid();
+    loadSparks();
+  }catch(e){
+    state.hidden=false; state.textContent = "Ошибка загрузки: "+e.message;
+  }
+}
 
-    function renderStats(){
-      const totalSubs = data.reduce((s,c)=>s+(c.subscribers||0),0);
-      const last = data.map(c=>c.snapshot_date).filter(Boolean).sort().pop();
-      stats.innerHTML = `
-        <div class="stat"><div class="k">Каналов</div><div class="v">${data.length}</div><div class="s">отслеживается</div></div>
-        <div class="stat"><div class="k">Суммарно подписчиков</div><div class="v">${compact(totalSubs)}</div><div class="s">${fmtFull(totalSubs)}</div></div>
-        <div class="stat"><div class="k">Последний сбор</div><div class="v" style="font-size:20px">${last||"—"}</div><div class="s">обновление каждые 6 ч</div></div>`;
-    }
+document.getElementById("q").addEventListener("input", renderGrid);
 
-    function render(){
-      const term = q.value.trim().toLowerCase();
-      const list = data
-        .filter(c=>!term || (c.title||"").toLowerCase().includes(term) || (c.username||"").toLowerCase().includes(term))
-        .sort((a,b)=>{
-          const av=a[sortKey]??-Infinity, bv=b[sortKey]??-Infinity;
-          return sortDesc ? bv-av : av-bv;
-        });
-      rows.innerHTML = list.map(c=>{
-        const name = c.title || c.username;
-        const initial = (name||"?").trim().charAt(0).toUpperCase();
-        const hue = hueOf(c.username);
-        return `<tr>
-          <td><div class="ch">
-            <div class="ava" style="background:hsl(${hue} 48% 42%)">${initial}</div>
-            <div><a href="https://t.me/${c.username}" target="_blank" rel="noopener">${name}</a>
-              <span class="u">@${c.username}</span></div>
-          </div></td>
-          <td title="${fmtFull(c.subscribers)}">${compact(c.subscribers)}</td>
-          <td>${growthBadge(c.growth_7d)}</td>
-          <td class="hide-sm" title="${fmtFull(c.avg_views)}">${compact(c.avg_views)}</td>
-          <td>${erBadge(c.err_pct)}</td>
-        </tr>`;
-      }).join("");
-      document.querySelectorAll("thead th").forEach(th=>{
-        th.classList.toggle("sorted", th.dataset.k===sortKey);
-        const a=th.querySelector(".arrow"); if(a) a.textContent = sortDesc?"▼":"▲";
-      });
-    }
+// modal
+const overlay=document.getElementById("overlay");
+const mUser=document.getElementById("mUser"), mKey=document.getElementById("mKey"), mMsg=document.getElementById("mMsg");
+document.getElementById("addBtn").onclick=()=>{ mKey.value=localStorage.getItem("tg_admin_key")||""; mMsg.textContent=""; mMsg.className="msg"; overlay.classList.add("open"); mUser.focus(); };
+document.getElementById("mCancel").onclick=()=>overlay.classList.remove("open");
+overlay.addEventListener("click",e=>{ if(e.target===overlay) overlay.classList.remove("open"); });
+document.getElementById("mAdd").onclick=async ()=>{
+  const username=mUser.value.trim(), key=mKey.value.trim();
+  if(!username){ mMsg.className="msg err"; mMsg.textContent="Укажи канал."; return; }
+  if(!key){ mMsg.className="msg err"; mMsg.textContent="Нужен ключ доступа (ADMIN_KEY)."; return; }
+  mMsg.className="msg"; mMsg.textContent="Добавляю…";
+  try{
+    const r=await fetch("/api/add-channel",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username,key}) });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error||r.status);
+    localStorage.setItem("tg_admin_key",key);
+    mMsg.className="msg ok"; mMsg.textContent=`✅ @${j.username} добавлен. Появится после ближайшего сбора.`;
+    mUser.value="";
+  }catch(e){
+    mMsg.className="msg err";
+    mMsg.textContent = (""+e.message).includes("Failed to fetch")
+      ? "Эндпоинт /api/add-channel доступен только на Vercel (не в локальном превью)."
+      : "Ошибка: "+e.message;
+  }
+};
 
-    // elements
-    const q=document.getElementById("q"), rows=document.getElementById("rows");
-    const tbl=document.getElementById("tbl"), state=document.getElementById("state"), stats=document.getElementById("stats");
-    q.addEventListener("input", render);
-    document.querySelectorAll("thead th").forEach(th=>th.addEventListener("click",()=>{
-      const k=th.dataset.k; if(!k) return;
-      if(sortKey===k) sortDesc=!sortDesc; else { sortKey=k; sortDesc=true; }
-      render();
-    }));
-
-    // modal
-    const overlay=document.getElementById("overlay");
-    const mUser=document.getElementById("mUser"), mKey=document.getElementById("mKey"), mMsg=document.getElementById("mMsg");
-    document.getElementById("addBtn").onclick=()=>{ mKey.value=localStorage.getItem("tg_admin_key")||""; mMsg.textContent=""; mMsg.className="msg"; overlay.classList.add("open"); mUser.focus(); };
-    document.getElementById("mCancel").onclick=()=>overlay.classList.remove("open");
-    overlay.addEventListener("click",e=>{ if(e.target===overlay) overlay.classList.remove("open"); });
-
-    document.getElementById("mAdd").onclick=async ()=>{
-      const username=mUser.value.trim(), key=mKey.value.trim();
-      if(!username){ mMsg.className="msg err"; mMsg.textContent="Укажи канал."; return; }
-      if(!key){ mMsg.className="msg err"; mMsg.textContent="Нужен ключ доступа (ADMIN_KEY)."; return; }
-      mMsg.className="msg"; mMsg.textContent="Добавляю…";
-      try{
-        const r=await fetch("/api/add-channel",{ method:"POST", headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({username,key}) });
-        const j=await r.json().catch(()=>({}));
-        if(!r.ok) throw new Error(j.error||r.status);
-        localStorage.setItem("tg_admin_key",key);
-        mMsg.className="msg ok"; mMsg.textContent=`✅ @${j.username} добавлен. Появится после ближайшего сбора.`;
-        mUser.value="";
-      }catch(e){
-        mMsg.className="msg err";
-        mMsg.textContent = (""+e.message).includes("Failed to fetch")
-          ? "Эндпоинт /api/add-channel доступен только на Vercel (не в локальном превью)."
-          : "Ошибка: "+e.message;
-      }
-    };
-
-    load();
-  </script>
+load();
+</script>
 </body>
 </html>
