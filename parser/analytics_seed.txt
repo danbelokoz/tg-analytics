@@ -1,0 +1,25 @@
+# Каналы с вакансиями для аналитики подписчиков (сценарий 2).
+# Один @username на строку. Проверены через t.me — реальные, релевантные.
+# Добавляй свои каналы сюда и перезапускай воркфлоу «Analytics — subscriber snapshots».
+
+careerspace
+jobforjunior
+qa_jobs
+marketing_jobs
+distantsiya
+product_jobs
+habr_career
+vakansii_it
+devops_jobs
+getitrussia
+designer_jobs
+jobs_it
+workzavr
+python_jobs
+php_jobs
+java_jobs
+itmozg
+remotelist
+remote_ru
+frontend_jobs
+gamedev_jobs
