@@ -103,7 +103,7 @@ footer{padding:44px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
   <div class="hero">
     <div>
       <h1>Каталог Telegram-каналов</h1>
-      <p class="sub">Живая аналитика по отслеживаемым каналам: рост аудитории, вовлечённость и охваты постов в одном месте.</p>
+      <p class="sub">Живая аналитика каналов о работе и вакансиях: подписчики и рост аудитории день ко дню.</p>
     </div>
     <div class="kpis" id="kpis"></div>
   </div>
@@ -119,7 +119,7 @@ footer{padding:44px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
   <div class="grid" id="grid"></div>
   <div class="state" id="state">Загрузка…</div>
 
-  <footer>Telemetria © 2026 · Данные наполняются парсером · обновление каждые 6 часов</footer>
+  <footer>Telemetria © 2026 · Данные собираются со страниц t.me · обновление ежедневно</footer>
 </div>
 
 <!-- Add modal -->
@@ -152,15 +152,11 @@ const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%3
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pct = v => v==null ? "—" : String(v).replace(".",",")+"%";
 const plural = (n,one,few,many) => { const m=n%100, d=n%10; return (m>=11&&m<=14)?many : d===1?one : (d>=2&&d<=4)?few : many; };
+// рост подписчиков со знаком (абсолютное число), «—» если нет базы
+const signed = n => n==null ? "—" : (n>0?"+":n<0?"−":"") + compact(Math.abs(n));
 
-// процент недельного роста от базы 7 дней назад
-function growthPct(c){
-  const base = c.subscribers_7d_ago;
-  if(base==null || base<=0 || c.growth_7d==null) return null;
-  return (c.growth_7d/base)*100;
-}
 function growthBadge(c){
-  const p = growthPct(c);
+  const p = c.growth_7d_pct;   // недельный рост в % считает view analytics_latest
   if(p==null){
     if(c.growth_7d==null) return '<span class="badge flat">н/д</span>';
     const cls = c.growth_7d>0?"up":c.growth_7d<0?"down":"flat", s=c.growth_7d>0?"+":c.growth_7d<0?"−":"";
@@ -236,10 +232,10 @@ function renderGrid(){
         ${growthBadge(c)}</div>
       <div class="metrics">
         <div class="m"><div class="k">Подписчики</div><div class="v" title="${fmtFull(c.subscribers)}">${compact(c.subscribers)}</div></div>
-        <div class="m"><div class="k">ER</div><div class="v">${pct(c.err_pct)}</div></div>
-        <div class="m"><div class="k">Охват</div><div class="v" title="${fmtFull(c.avg_views)}">${compact(c.avg_views)}</div></div>
+        <div class="m"><div class="k">Рост 1д</div><div class="v" title="${fmtFull(c.growth_1d)}">${signed(c.growth_1d)}</div></div>
+        <div class="m"><div class="k">Рост 7д</div><div class="v" title="${fmtFull(c.growth_7d)}">${signed(c.growth_7d)}</div></div>
       </div>
-      ${sparkSVG(c.id)}
+      ${sparkSVG(c.username)}
     </a>`;
   }).join("");
 }
@@ -247,13 +243,13 @@ function renderGrid(){
 async function loadSparks(){
   try{
     const since = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/channel_snapshots?select=channel_id,snapshot_date,subscribers&snapshot_date=gte.${since}&order=snapshot_date.asc`,{headers:SB_HEADERS});
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/subscriber_snapshots?select=username,snapshot_date,subscribers&snapshot_date=gte.${since}&order=snapshot_date.asc`,{headers:SB_HEADERS});
     if(!r.ok) return;
     const rows = await r.json();
     sparks = {};
     for(const row of rows){
       if(row.subscribers==null) continue;
-      (sparks[row.channel_id] ||= []).push(row.subscribers);
+      (sparks[row.username] ||= []).push(row.subscribers);
     }
     renderGrid();
   }catch(e){ /* спарклайны — необязательны */ }
@@ -262,7 +258,7 @@ async function loadSparks(){
 async function load(){
   const state = document.getElementById("state");
   try{
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/channel_latest?select=*&order=subscribers.desc.nullslast`,{headers:SB_HEADERS});
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/analytics_latest?select=*&order=subscribers.desc.nullslast`,{headers:SB_HEADERS});
     if(!r.ok) throw new Error(r.status+" "+(await r.text()).slice(0,120));
     data = await r.json();
     renderKPIs(); renderFilters(); renderGrid();
