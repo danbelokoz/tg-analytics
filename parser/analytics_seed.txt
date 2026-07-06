@@ -23,3 +23,5 @@ remotelist
 remote_ru
 frontend_jobs
 gamedev_jobs
+remocate
+realtimejobs
