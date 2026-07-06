@@ -25,3 +25,9 @@ frontend_jobs
 gamedev_jobs
 remocate
 realtimejobs
+zarubezhom_jobs
+zdemcv
+forproducts
+geekjobs
+young_relocate
+talentmove_channel
