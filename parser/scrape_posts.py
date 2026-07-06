@@ -31,72 +31,98 @@ SB_HEADERS = {
     "Content-Type": "application/json",
 }
 
-# ── Теги: (тег, [ключевые слова в нижнем регистре]) ──────────────────────────
-# Порядок = порядок вывода чипов. Совпадение по подстроке в тексте поста.
-ROLE = [
-    ("Frontend",   ["frontend", "фронтенд", "фронт", "react", "vue", "angular"]),
-    ("Backend",    ["backend", "бэкенд", "бекенд", "бэк", "django", "node.js", "nodejs", "spring", "laravel"]),
+# ── Теги ─────────────────────────────────────────────────────────────────────
+# Ключи — стемы/фразы. Матчинг с границами слова:
+#   • латинские токены — обе границы (чтобы "go" не ловилось в "google", "ml" в "html");
+#   • кириллические стемы — левая граница + свободный суффикс (ловим склонения:
+#     "аналитик" → "аналитика", "аналитику"; но не середину слова "конфронтация").
+_CYR = re.compile(r"[а-яё]", re.I)
+
+
+def _kw_rx(keywords):
+    parts = []
+    for k in keywords:
+        esc = re.escape(k.strip())
+        if _CYR.search(k):
+            parts.append(r"(?<![а-яёa-z0-9])" + esc)                 # левая граница, суффикс свободен
+        else:
+            parts.append(r"(?<![a-z0-9])" + esc + r"(?![a-z0-9])")   # обе границы для латиницы
+    return re.compile("|".join(parts), re.I)
+
+
+def _compile(groups):
+    return [(name, _kw_rx(kws)) for name, kws in groups]
+
+
+ROLE = _compile([
+    ("Frontend",   ["frontend", "фронтенд", "фронт", "react", "vue", "angular", "верстальщик"]),
+    ("Backend",    ["backend", "бэкенд", "бекенд", "django", "node.js", "nodejs", "spring", "laravel"]),
     ("Fullstack",  ["fullstack", "full stack", "фулстек", "фулл-стек"]),
-    ("Mobile",     ["mobile", " ios", "android", "flutter", "react native", "мобильн"]),
-    ("DevOps",     ["devops", " sre", "kubernetes", "k8s", "ci/cd", "инфраструктур"]),
-    ("QA",         [" qa", "qa-", "тестировщик", "тестирование", "автотест", "quality assurance"]),
+    ("Mobile",     ["mobile", "ios", "android", "flutter", "react native", "мобильн"]),
+    ("DevOps",     ["devops", "sre", "kubernetes", "k8s", "ci/cd", "инфраструктур"]),
+    ("QA",         ["qa", "тестировщик", "тестирование", "автотест", "quality assurance"]),
     ("Data/ML",    ["data scientist", "data analyst", "data engineer", "аналитик данных",
-                    " ml", "machine learning", "машинн", " bi ", "big data"]),
+                    "ml", "machine learning", "машинн", "big data"]),
     ("Аналитик",   ["аналитик", "analyst", "системный аналитик", "бизнес-аналитик"]),
-    ("Design",     ["дизайн", "designer", "ui/ux", "ux", " ui ", "продуктовый дизайн"]),
+    ("Design",     ["дизайн", "designer", "ui/ux", "ux", "ui", "продуктовый дизайн"]),
     ("Product",    ["продакт", "product manager", "продуктовый менеджер", "product owner"]),
     ("Project",    ["проджект", "project manager", "проектный менеджер", "delivery manager"]),
-    ("Marketing",  ["маркетолог", "маркетинг", "marketing", "smm", " seo", "таргетолог", "контент-менеджер"]),
+    ("Marketing",  ["маркетолог", "маркетинг", "marketing", "smm", "seo", "таргетолог", "контент-менеджер"]),
     ("Sales",      ["продаж", "sales", "менеджер по продажам", "account manager"]),
-    ("HR",         [" hr ", "hr-", "рекрутер", "recruiter", "по персоналу"]),
-    ("Management",  ["руководитель", "head of", "teamlead", "team lead", "тимлид", "cto", "директор"]),
+    ("HR",         ["hr", "рекрутер", "recruiter", "по персоналу"]),
+    ("Management", ["руководитель", "head of", "teamlead", "team lead", "тимлид", "cto", "директор"]),
     ("Support",    ["поддержк", "support", "техподдержк"]),
-]
-STACK = [
+])
+ROLE_NAMES = {r[0] for r in ROLE}
+STACK = _compile([
     ("Python",     ["python", "питон", "django", "fastapi"]),
-    ("JS/TS",      ["javascript", " js ", "typescript", " ts ", "react", "node"]),
-    ("Java",       [" java", "джава"]),
-    ("PHP",        [" php", "laravel"]),
-    ("Go",         ["golang", " go ", " go-"]),
+    ("JS/TS",      ["javascript", "js", "typescript", "ts", "node"]),
+    ("Java",       ["java", "джава"]),
+    ("PHP",        ["php", "laravel"]),
+    ("Go",         ["golang", "go разработчик", "go-разработчик", "go developer", "go dev"]),
     (".NET/C#",    ["c#", ".net", "asp.net"]),
     ("1C",         ["1с", "1c"]),
-]
-FORMAT = [
-    ("Удалёнка",   ["удален", "удалён", "remote", "дистанционн", "из дома"]),
+])
+FORMAT = _compile([
+    ("Удалёнка",   ["удалён", "удален", "remote", "дистанционн", "из дома"]),
     ("Гибрид",     ["гибрид", "hybrid"]),
-    ("Офис",       ["в офис", "офис,", "on-site", "on site", "на месте"]),
+    ("Офис",       ["офис", "on-site", "on site"]),
     ("Релокация",  ["релокац", "relocation", "релокейт", "переезд", "relocate"]),
-]
-GRADE = [
+])
+GRADE = _compile([
     ("Junior",     ["junior", "джун", "начинающ", "без опыта", "intern", "стажёр", "стажер"]),
     ("Middle",     ["middle", "миддл", "мидл"]),
     ("Senior",     ["senior", "сеньор", "синьор", "сениор"]),
-    ("Lead",       [" lead", "тимлид", "team lead", "ведущий разработчик"]),
-]
-EMPLOY = [
+    ("Lead",       ["lead", "тимлид", "team lead", "ведущий разработчик"]),
+])
+EMPLOY = _compile([
     ("Стажировка", ["стажировк", "интернатур", "internship"]),
-    ("Фриланс",    ["фриланс", "freelance", "проектн", "подработк", "разов"]),
+    ("Фриланс",    ["фриланс", "freelance", "проектн", "подработк"]),
     ("Part-time",  ["part-time", "part time", "частичн", "парт-тайм", "неполн"]),
-]
+])
 _SALARY = re.compile(r"(\$\s?\d|\d[\d\s]*\s?(?:000|k\b|к\b|тыс)|₽|руб|€\s?\d|оклад|зарплат|от\s+\d|salary)", re.I)
-# Маркеры того, что пост — вакансия (а не дайджест/реклама/новость)
+# Пост-вакансия (а не реклама/новость)
 _VAC = re.compile(r"(ваканс|ищем|требуется|в команду|hiring|we are looking|открыта позиц|нужен|нужна|"
-                  r"обязанност|требовани|мы предлагаем|условия|з/п|з\\п|зарплат|оклад|remote|удален)", re.I)
+                  r"обязанност|требовани|мы предлагаем|условия|з/п|зарплат|оклад|remote|удалён|удален)", re.I)
+# Дайджест: один пост со списком многих вакансий — теги-роли на нём бессмысленны
+_DIGEST = re.compile(r"дайджест|подборка ваканс|вакансии недели|кого ищут|компани[ий][^.]{0,30}нанима", re.I)
+
+
+def _hits(groups, text):
+    return [name for name, rx in groups if rx.search(text)]
 
 
 def tag_post(text):
-    t = " " + text.lower() + " "
-    tags = []
-    for group in (ROLE, STACK, FORMAT, GRADE, EMPLOY):
-        for tag, kws in group:
-            if any(k in t for k in kws):
-                tags.append(tag)
-    if _SALARY.search(text):
-        tags.append("З/п указана")
-    # дедуп с сохранением порядка
-    tags = list(dict.fromkeys(tags))
-    has_role = any(tag in {r[0] for r in ROLE} for tag in tags)
-    is_vacancy = has_role or bool(_VAC.search(text))
+    roles = _hits(ROLE, text)
+    fmt = _hits(FORMAT, text)
+    pay = ["З/п указана"] if _SALARY.search(text) else []
+    # дайджест (по маркеру или по 5+ ролям в одном посте) — не спамим ролями
+    if _DIGEST.search(text) or len(roles) >= 5:
+        return list(dict.fromkeys(["Дайджест"] + fmt + pay)), True
+    tags = list(dict.fromkeys(
+        roles + _hits(STACK, text) + fmt + _hits(GRADE, text) + _hits(EMPLOY, text) + pay
+    ))
+    is_vacancy = bool(roles) or bool(_VAC.search(text))
     return tags, is_vacancy
 
 

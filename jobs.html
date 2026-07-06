@@ -58,6 +58,7 @@ h1{font-size:clamp(26px,4vw,36px);font-weight:800;letter-spacing:-.02em}
 .tag.fmt{background:#ecfdf5;color:#059669}
 .tag.grade{background:#fff5e9;color:#c2760a}
 .tag.pay{background:#f3ecff;color:#7c3aed}
+.tag.digest{background:#18181f;color:#fff}
 
 .state{padding:60px 20px;text-align:center;color:#9095a5;font-weight:600;font-size:15px}
 footer{padding:40px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
@@ -102,7 +103,7 @@ const SB_HEADERS = { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPAB
 const ROLE = new Set(["Frontend","Backend","Fullstack","Mobile","DevOps","QA","Data/ML","Аналитик","Design","Product","Project","Marketing","Sales","HR","Management","Support"]);
 const FMT  = new Set(["Удалёнка","Гибрид","Офис","Релокация"]);
 const GRADE= new Set(["Junior","Middle","Senior","Lead"]);
-const tagClass = t => t==="З/п указана" ? "pay" : ROLE.has(t)?"role" : FMT.has(t)?"fmt" : GRADE.has(t)?"grade" : "";
+const tagClass = t => t==="Дайджест" ? "digest" : t==="З/п указана" ? "pay" : ROLE.has(t)?"role" : FMT.has(t)?"fmt" : GRADE.has(t)?"grade" : "";
 
 let data = [], active = new Set();
 
