@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Telemetria — каталог Telegram-каналов</title>
 <meta name="description" content="Живая аналитика Telegram-каналов: подписчики, рост аудитории, вовлечённость и охваты постов в одном каталоге." />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts/manrope.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#f7f8fa;color:#18181f;font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased}
@@ -141,9 +139,8 @@ footer{padding:44px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 </div>
 
 <script>
-const SUPABASE_URL = "https://jaqhstbeelzciburiqyt.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcWhzdGJlZWx6Y2lidXJpcXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDg3ODcsImV4cCI6MjA5NTg4NDc4N30.RJ9khzIXvNUaxCw8bu-pF8Ye3_8boGCz3vvgUUO_q1E";
-const SB_HEADERS = { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY };
+// Данные грузятся статическим JSON с нашего домена (data/*.json), не запросом
+// в Supabase — чтобы сайт открывался в РФ без VPN (см. PROJECT.md). JSON обновляет CI.
 
 let data = [], sparks = {}, activeCat = "__all__";
 
@@ -243,8 +240,7 @@ function renderGrid(){
 
 async function loadSparks(){
   try{
-    const since = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/subscriber_snapshots?select=username,snapshot_date,subscribers&snapshot_date=gte.${since}&order=snapshot_date.asc`,{headers:SB_HEADERS});
+    const r = await fetch("data/subscriber_snapshots.json",{cache:"no-cache"});
     if(!r.ok) return;
     const rows = await r.json();
     sparks = {};
@@ -259,7 +255,7 @@ async function loadSparks(){
 async function load(){
   const state = document.getElementById("state");
   try{
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/analytics_latest?select=*&order=subscribers.desc.nullslast`,{headers:SB_HEADERS});
+    const r = await fetch("data/analytics_latest.json",{cache:"no-cache"});
     if(!r.ok) throw new Error(r.status+" "+(await r.text()).slice(0,120));
     data = await r.json();
     renderKPIs(); renderFilters(); renderGrid();

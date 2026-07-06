@@ -19,6 +19,8 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write   # коммит обновлённых data/*.json обратно в репо
     steps:
       - uses: actions/checkout@v4
 
@@ -35,3 +37,12 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           CONCURRENCY: "8"
         run: python parser/scrape_posts.py
+
+      - name: Export static JSON snapshots
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python parser/export_json.py
+
+      - name: Commit data/ (triggers Vercel redeploy)
+        run: bash .github/commit-data.sh

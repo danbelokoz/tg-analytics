@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Telemetria — лента вакансий</title>
 <meta name="description" content="Живая лента вакансий из Telegram-каналов о работе с авто-тегами: роль, формат, грейд, стек." />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts/manrope.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#f7f8fa;color:#18181f;font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased}
@@ -95,9 +93,9 @@ footer{padding:40px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 </div>
 
 <script>
-const SUPABASE_URL = "https://jaqhstbeelzciburiqyt.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcWhzdGJlZWx6Y2lidXJpcXl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMDg3ODcsImV4cCI6MjA5NTg4NDc4N30.RJ9khzIXvNUaxCw8bu-pF8Ye3_8boGCz3vvgUUO_q1E";
-const SB_HEADERS = { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY };
+// Данные грузятся статическим JSON с нашего домена (data/job_feed.json),
+// не запросом в Supabase — чтобы сайт открывался в РФ без VPN (см. PROJECT.md).
+// JSON обновляет CI после скрейпа.
 
 // классификация тегов по группам (для цвета чипа)
 const ROLE = new Set(["Frontend","Backend","Fullstack","Mobile","DevOps","QA","Data/ML","Аналитик","Design","Product","Project","Marketing","Sales","HR","Management","Support"]);
@@ -175,7 +173,7 @@ const plural=(n,one,few,many)=>{const m=n%100,d=n%10;return(m>=11&&m<=14)?many:d
 async function load(){
   const state=document.getElementById("state");
   try{
-    const r=await fetch(`${SUPABASE_URL}/rest/v1/job_feed?select=*&limit=500`,{headers:SB_HEADERS});
+    const r=await fetch("data/job_feed.json",{cache:"no-cache"});
     if(!r.ok) throw new Error(r.status+" "+(await r.text()).slice(0,120));
     data=await r.json();
     renderFilters(); renderFeed();
