@@ -1,64 +1,69 @@
 # TG Analytics
 
-Аналитика публичных Telegram-каналов: парсер собирает подписчиков/охваты/реакции
-через MTProto (Telethon) по cron в GitHub Actions, пишет в Supabase, статичный
-дашборд на Vercel читает данные напрямую.
+Два продукта поверх Telegram-каналов о работе, оба питаются **HTTP-скрейпом публичных
+страниц t.me — без Telegram-аккаунта** (банить нечего, масштабируется на тысячи каналов):
+
+- **Аналитика подписчиков** (`index.html`, `/`) — рост аудитории каналов день ко дню.
+- **Лента вакансий** (`jobs.html`, `/jobs`) — последние посты с авто-тегами (роль, формат,
+  грейд, стек, з/п).
+
+Скрейперы крутятся в GitHub Actions по cron, пишут в Supabase; статичный фронт на Vercel
+читает данные напрямую через anon-ключ.
 
 ```
-parser/parse_channels.py   — парсер (Telethon → Supabase REST)
-parser/gen_session.py      — разовая генерация TG_SESSION
-.github/workflows/parse.yml — cron каждые 6 часов
-schema.sql                  — таблицы + view + RLS (выполнить в Supabase)
-index.html                  — дашборд (читает Supabase напрямую через anon key)
-vercel.json                 — статический хостинг
+parser/scrape_subscribers.py     — подписчики со страницы t.me/<user>  (аналитика)
+parser/scrape_posts.py           — посты со страницы t.me/s/<user> + авто-теги (лента)
+parser/analytics_seed.txt        — список каналов (@username по строке)
+parser/requirements_analytics.txt — зависимости скрейперов (aiohttp)
+.github/workflows/analyze.yml    — подписчики: ежедневно + при пуше
+.github/workflows/jobs.yml       — посты: каждые 3 часа + при пуше
+schema_analytics.sql             — таблицы аналитики (analytics_channels, subscriber_snapshots)
+schema_jobs.sql                  — таблицы ленты (job_posts, job_feed)
+index.html / jobs.html           — фронт (читают Supabase через anon key)
+vercel.json                      — статический хостинг
 ```
 
-## Архитектура и бесплатные лимиты
-- **GitHub** — новый репо (тот же аккаунт). Публичный → безлимитные Actions-минуты.
-- **Supabase** — НОВЫЙ проект (free даёт до 2; это второй). Парсер пишет ежедневно
-  → проект не уснёт от неактивности.
-- **Vercel** — новый проект (тот же аккаунт). Тут чистая статика, serverless-функций нет
-  → лимит 12 функций не грозит.
-- **Telegram** — ⚠️ ОТДЕЛЬНЫЙ (бёрнер) аккаунт под парсер, не личный (риск бана).
+## Как это работает
 
-## Настройка (по шагам)
+- **Подписчики:** `t.me/<username>` (обычная страница) отдаёт точное число подписчиков в
+  блоке `tgme_page_extra`. Скрейпер снимает снапшот раз в сутки → `subscriber_snapshots`,
+  view `analytics_latest` считает рост за 1 и 7 дней.
+- **Посты:** `t.me/s/<username>` (веб-превью ленты) отдаёт ~20 последних постов. Скрейпер
+  парсит текст/дату/просмотры, проставляет теги регэкспами по тексту и флаг `is_vacancy`,
+  пишет в `job_posts`; view `job_feed` отдаёт фронту только вакансии.
+- Всё пишется через `upsert` (`on_conflict` + merge) — повторный прогон обновляет строки,
+  а не плодит дубли (поэтому перетегирование постов работает «на месте»).
+
+## Настройка
 
 ### 1. Supabase
-1. Создай новый проект на supabase.com.
-2. SQL Editor → выполни `schema.sql`.
+1. Создай проект на supabase.com.
+2. SQL Editor → выполни `schema_analytics.sql`, затем `schema_jobs.sql`.
 3. Settings → API → возьми `Project URL`, `anon key`, `service_role key`.
 
-### 2. Telegram
-1. Заведи отдельный аккаунт (отдельный номер).
-2. https://my.telegram.org/apps → создай приложение → получи `api_id` и `api_hash`.
-3. Сгенерь сессию локально:
-   ```bash
-   cd parser && pip install -r requirements.txt
-   TG_API_ID=... TG_API_HASH=... python gen_session.py
-   ```
-   Введи номер дедик-аккаунта + код. Скопируй строку `TG_SESSION`.
-
-### 3. GitHub
+### 2. GitHub Secrets
 Repo → Settings → Secrets and variables → Actions → добавь:
-`TG_API_ID`, `TG_API_HASH`, `TG_SESSION`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-Запусти первый прогон вручную: Actions → *Parse Telegram channels* → Run workflow,
-в поле channels впиши, напр., `durov,telegram`.
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+
+### 3. Каналы и первый прогон
+1. Впиши `@username` (по строке) в `parser/analytics_seed.txt`, закоммить.
+2. Actions → *Analytics — subscriber snapshots* → Run workflow (или просто push в `main` —
+   оба воркфлоу триггерятся на изменения скрейперов/сида). Это засеет каналы и снимет
+   первые снапшоты. Лента наполнится ближайшим прогоном *Jobs — vacancy feed*.
 
 ### 4. Vercel
-1. New Project → импортируй репо (тот же аккаунт).
-2. В `index.html` подставь `SUPABASE_URL` и `SUPABASE_ANON_KEY`.
+1. New Project → импортируй репо.
+2. В `index.html` / `jobs.html` подставь свои `SUPABASE_URL` и `SUPABASE_ANON_KEY`.
 3. Deploy.
 
 ## Заметки
-- `views`/`forwards`/`reactions` со временем растут — upsert по `(channel_id, message_id)`
-  обновляет их при каждом проходе.
-- Подписчики — снимок раз в день (`channel_snapshots`), отсюда «Рост 7д» во view.
-- Парсер бережёт Telegram: пауза 2.5 c между каналами + обработка `FloodWait`.
-  Не гони слишком часто/много за раз — словишь временный бан.
-- Bot API НЕ подходит для чужих каналов (нужны права админа) — поэтому MTProto.
-- Если my.telegram.org не даёт создать своё приложение (ERROR / `[object Object]` —
-  частый гео/VPN-баг), на старте годится публичная пара `api_id=2040` /
-  `api_hash=b18441a1ff607e10a989891a5462e627` (Telegram Desktop). Позже заменишь на свою —
-  это лишь «ID приложения», на доступ к аккаунту не влияет.
-- Генерацию сессии (`gen_session.py`) в стране с блокировкой Telegram делай **под VPN** —
-  тогда прокси в коде не нужен. Парсеру на GitHub Actions VPN не нужен (раннеры за границей).
+- Аккаунт Telegram не нужен — только публичные страницы t.me. Никакого риска бана.
+- Скрейперы вежливы к t.me: асинхронно, семафор на `CONCURRENCY` (дефолт 8) + пауза
+  `REQ_DELAY` после запроса. На тысячах каналов держи concurrency умеренным.
+- Точность подписчиков: страница `t.me/<user>` даёт точное число; `t.me/s/` округляет —
+  поэтому для аналитики берём именно `t.me/<user>`.
+- Теги ленты — эвристика по ключевым словам (границы слов + отдельная обработка дайджестов).
+  Слово «аналитик»/«аналитика» неразличимо на уровне ключей — это предел без NLP.
+- Легаси: `schema.sql` (таблицы `channels`/`posts`/`watchlist` от старого MTProto-парсера)
+  больше не наполняется; оставлен как история модели. Кнопка «Добавить канал» на фронте
+  всё ещё пишет в `watchlist` (не в аналитику) — на очереди перепрошивка.

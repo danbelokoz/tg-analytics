@@ -79,6 +79,19 @@
     .salary-val{color:var(--fg);font-weight:700;font-variant-numeric:tabular-nums;}
     input[type=range]{width:100%;accent-color:var(--accent);}
     input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;}
+    .num-input{position:relative;}
+    .num-input input{width:100%;box-sizing:border-box;padding:9px 56px 9px 12px;border:1px solid var(--line);
+      border-radius:10px;background:var(--surface);color:var(--fg);font:600 14px inherit;outline:none;
+      font-variant-numeric:tabular-nums;transition:.12s;}
+    .num-input input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+    .num-input input::placeholder{color:var(--faint);font-weight:600;}
+    .num-suffix{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);
+      font-weight:700;font-size:14px;pointer-events:none;}
+    .num-clear{position:absolute;right:32px;top:50%;transform:translateY(-50%);width:18px;height:18px;
+      padding:0;border:none;border-radius:50%;background:var(--surface-2);color:var(--muted);
+      font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s;}
+    .num-clear:hover{background:var(--accent);color:#fff;}
+    .num-clear[hidden]{display:none;}
 
     /* ============ CONTENT HEAD ============ */
     .chead{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
@@ -242,8 +255,12 @@
           <div class="fgroup"><div class="lbl">Грейд</div><div class="chips" id="fSen"></div></div>
           <div class="fgroup"><div class="lbl">Тип источника</div><div class="chips" id="fSrc"></div></div>
           <div class="fgroup">
-            <div class="lbl">Зарплата от <span class="salary-val" id="salLbl">0 ₽</span></div>
-            <input type="range" id="fSalary" min="0" max="500000" step="20000" value="0" />
+            <div class="lbl">Зарплата от</div>
+            <div class="num-input">
+              <input type="text" inputmode="numeric" id="fSalary" placeholder="0" autocomplete="off" />
+              <button type="button" class="num-clear" id="fSalaryClear" aria-label="Очистить" hidden>&times;</button>
+              <span class="num-suffix">₽</span>
+            </div>
           </div>
           <div class="fgroup"><label class="frow"><input type="checkbox" id="fOnlySalary" /> Только с зарплатой</label></div>
         </aside>
@@ -549,7 +566,16 @@
   chipRow(document.getElementById("fSen"),SENIOR,F.sen);
   chipRow(document.getElementById("fSrc"),SRCTYPE,F.src);
 
-  document.getElementById("fSalary").oninput=e=>{F.salary=+e.target.value;document.getElementById("salLbl").textContent=money(F.salary)+" ₽";renderFeed();};
+  const salaryInput=document.getElementById("fSalary");
+  const salaryClear=document.getElementById("fSalaryClear");
+  function setSalary(raw){
+    const n=parseInt(String(raw).replace(/\D/g,""),10)||0;
+    salaryInput.value=n?money(n):"";
+    salaryClear.hidden=!n;
+    F.salary=n;
+  }
+  salaryInput.oninput=()=>{setSalary(salaryInput.value);renderFeed();};
+  salaryClear.onclick=()=>{setSalary("");salaryInput.focus();renderFeed();};
   document.getElementById("fOnlySalary").onchange=e=>{F.onlySalary=e.target.checked;renderFeed();};
   document.getElementById("q").oninput=e=>{F.q=e.target.value.trim().toLowerCase();renderFeed();renderChannels();};
   document.getElementById("sortJobs").onchange=e=>{F.sort=e.target.value;renderFeed();};
@@ -560,7 +586,7 @@
   document.getElementById("resetF").onclick=()=>{
     F.cat.clear();F.fmt.clear();F.emp.clear();F.sen.clear();F.src.clear();F.salary=0;F.onlySalary=false;
     document.querySelectorAll(".filters .chip").forEach(c=>c.classList.remove("on"));
-    document.getElementById("fSalary").value=0;document.getElementById("salLbl").textContent="0 ₽";
+    setSalary("");
     document.getElementById("fOnlySalary").checked=false;renderFeed();
   };
   document.querySelectorAll("#chTbl thead th[data-k]").forEach(th=>th.onclick=()=>{
