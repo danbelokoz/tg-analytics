@@ -1,6 +1,12 @@
 name: Analytics — subscriber snapshots
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "parser/analytics_seed.txt"
+      - "parser/scrape_subscribers.py"
+      - ".github/workflows/analyze.yml"
   schedule:
     # раз в сутки в 05:23 UTC — не в :00, чтобы не попадать в пик крон-дропов GitHub
     - cron: "23 5 * * *"
@@ -9,7 +15,7 @@ on:
       seed_file:
         description: "Путь к файлу с @username (разово засидить каналы)"
         required: false
-        default: ""
+        default: "parser/analytics_seed.txt"
 
 concurrency:
   group: tg-analytics
@@ -33,6 +39,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SEED_FILE: ${{ github.event.inputs.seed_file }}
+          # сид-файл — источник правды: пере-засеваем и на расписании (upsert идемпотентен)
+          SEED_FILE: ${{ github.event.inputs.seed_file || 'parser/analytics_seed.txt' }}
           CONCURRENCY: "8"
         run: python parser/scrape_subscribers.py
