@@ -6,8 +6,14 @@ on:
     paths:
       - "parser/scrape_posts.py"
       - ".github/workflows/jobs.yml"
+  # Основной планировщик — внешний пингер (cron-job.org) шлёт repository_dispatch
+  # каждые 30 мин. Он бьёт по расписанию точно: API-запуск не попадает в очередь
+  # события schedule, которую GitHub задерживает на 10–30+ мин (иногда часы).
+  repository_dispatch:
+    types: [scrape-jobs]
+  # Запасной планировщик на случай, если внешний пингер отвалится. GitHub-крон
+  # неточен по времени, но рано или поздно сработает.
   schedule:
-    # каждые 30 минут — посты вакансий обновляются часто
     - cron: "*/30 * * * *"
   workflow_dispatch:
 
