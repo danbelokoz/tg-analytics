@@ -47,7 +47,8 @@ h1{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.02em}
 .card{background:#fff;border:1px solid #e9eaf0;border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(24,24,31,.04);transition:.2s;cursor:pointer;text-decoration:none;color:inherit;display:block}
 .card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(24,24,31,.09);border-color:#d9dce6}
 .chead{display:flex;align-items:center;gap:12px}
-.ava{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;background-size:cover;background-position:center}
+.ava{position:relative;overflow:hidden;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0}
+.avimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .chead .t{font-weight:800;font-size:15.5px;line-height:1.2}
 .chead .c{font-size:12.5px;color:#9095a5;font-weight:600;margin-top:2px}
 .badge{margin-left:auto;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:999px;white-space:nowrap;flex-shrink:0}
@@ -182,8 +183,12 @@ function sparkSVG(cid){
 function avatar(c){
   const name = c.title || c.username || "?";
   const initial = esc(name.trim().charAt(0).toUpperCase());
-  if(c.photo_url) return `<div class="ava" style="background-color:hsl(${hueOf(c.username)} 48% 50%);background-image:url('${esc(c.photo_url)}')"></div>`;
-  return `<div class="ava" style="background:hsl(${hueOf(c.username)} 48% 50%)">${initial}</div>`;
+  const bg = `hsl(${hueOf(c.username)} 48% 50%)`;
+  // Буква рисуется всегда; фото Telegram (cdn telesco.pe) кладём поверх <img>.
+  // onerror убирает картинку → если CDN недоступен в РФ, остаётся цветной кружок
+  // с буквой вместо битого квадрата (см. PROJECT.md «Доступность в РФ»).
+  const img = c.photo_url ? `<img class="avimg" src="${esc(c.photo_url)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+  return `<div class="ava" style="background:${bg}">${initial}${img}</div>`;
 }
 
 function renderKPIs(){

@@ -44,7 +44,8 @@ h1{font-size:clamp(26px,4vw,36px);font-weight:800;letter-spacing:-.02em}
 .post{background:#fff;border:1px solid #e9eaf0;border-radius:16px;padding:18px 20px;box-shadow:0 1px 2px rgba(24,24,31,.04);transition:.15s;text-decoration:none;color:inherit;display:block}
 .post:hover{border-color:#d9dce6;box-shadow:0 8px 22px rgba(24,24,31,.07)}
 .phead{display:flex;align-items:center;gap:11px}
-.ava{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;background-size:cover;background-position:center}
+.ava{position:relative;overflow:hidden;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+.avimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .phead .t{font-weight:800;font-size:14px;line-height:1.2}
 .phead .c{font-size:12px;color:#9095a5;font-weight:600;margin-top:2px}
 .phead .meta{margin-left:auto;text-align:right;font-size:12px;color:#9095a5;font-weight:600;flex-shrink:0}
@@ -121,8 +122,12 @@ function timeAgo(iso){
 function avatar(c){
   const name=c.channel_title||c.username||"?";
   const initial=esc(name.trim().charAt(0).toUpperCase());
-  if(c.channel_photo) return `<div class="ava" style="background-color:hsl(${hueOf(c.username)} 48% 50%);background-image:url('${esc(c.channel_photo)}')"></div>`;
-  return `<div class="ava" style="background:hsl(${hueOf(c.username)} 48% 50%)">${initial}</div>`;
+  const bg=`hsl(${hueOf(c.username)} 48% 50%)`;
+  // Буква рисуется всегда; фото Telegram (cdn telesco.pe) кладём поверх <img>.
+  // onerror убирает картинку → если CDN недоступен в РФ, остаётся цветной кружок
+  // с буквой вместо битого квадрата (см. PROJECT.md «Доступность в РФ»).
+  const img=c.channel_photo?`<img class="avimg" src="${esc(c.channel_photo)}" alt="" loading="lazy" onerror="this.remove()">`:"";
+  return `<div class="ava" style="background:${bg}">${initial}${img}</div>`;
 }
 
 // самые частые теги → чипы фильтра
