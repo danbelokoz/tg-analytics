@@ -7,8 +7,8 @@ on:
       - "parser/scrape_posts.py"
       - ".github/workflows/jobs.yml"
   schedule:
-    # каждые 3 часа в :41 — посты вакансий обновляются часто
-    - cron: "41 */3 * * *"
+    # каждые 30 минут — посты вакансий обновляются часто
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 concurrency:
