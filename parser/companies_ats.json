@@ -66,6 +66,12 @@
     "token": "black-forest-labs"
   },
   {
+    "slug": "boltnew-stackblitz",
+    "name": "Bolt.new (StackBlitz)",
+    "ats": "greenhouse",
+    "token": "stackblitz"
+  },
+  {
     "slug": "candid-health",
     "name": "Candid Health",
     "ats": "ashby",
@@ -88,6 +94,12 @@
     "name": "CD Projekt Red",
     "ats": "smartrecruiters",
     "token": "cdprojektred"
+  },
+  {
+    "slug": "characterai",
+    "name": "Character.AI",
+    "ats": "ashby",
+    "token": "character"
   },
   {
     "slug": "clickhouse",
@@ -124,6 +136,14 @@
     "name": "CoreWeave",
     "ats": "greenhouse",
     "token": "coreweave"
+  },
+  {
+    "slug": "crowdstrike",
+    "name": "CrowdStrike",
+    "ats": "workday",
+    "tenant": "crowdstrike",
+    "dc": "wd5",
+    "site": "CrowdstrikeCareers"
   },
   {
     "slug": "cursor-ai",
@@ -220,6 +240,12 @@
     "name": "Glean",
     "ats": "smartrecruiters",
     "token": "glean"
+  },
+  {
+    "slug": "google-deepmind",
+    "name": "Google DeepMind",
+    "ats": "greenhouse",
+    "token": "deepmind"
   },
   {
     "slug": "harvey",
@@ -420,6 +446,12 @@
     "token": "photoroom"
   },
   {
+    "slug": "plata",
+    "name": "Plata",
+    "ats": "greenhouse",
+    "token": "platacard"
+  },
+  {
     "slug": "polyai",
     "name": "PolyAI",
     "ats": "greenhouse",
@@ -462,10 +494,24 @@
     "token": "proton"
   },
   {
+    "slug": "quora-poe",
+    "name": "Quora (Poe)",
+    "ats": "ashby",
+    "token": "quora"
+  },
+  {
     "slug": "ramp",
     "name": "Ramp",
     "ats": "ashby",
     "token": "ramp"
+  },
+  {
+    "slug": "razer",
+    "name": "Razer",
+    "ats": "workday",
+    "tenant": "razer",
+    "dc": "wd3",
+    "site": "Careers"
   },
   {
     "slug": "recraft",
@@ -636,6 +682,12 @@
     "token": "the-exploration-company"
   },
   {
+    "slug": "thinking-machines-lab",
+    "name": "Thinking Machines Lab",
+    "ats": "greenhouse",
+    "token": "thinkingmachines"
+  },
+  {
     "slug": "tines",
     "name": "Tines",
     "ats": "greenhouse",
@@ -682,6 +734,12 @@
     "name": "Wispr Flow",
     "ats": "ashby",
     "token": "wispr-flow"
+  },
+  {
+    "slug": "wiz",
+    "name": "Wiz",
+    "ats": "greenhouse",
+    "token": "wizinc"
   },
   {
     "slug": "writer",

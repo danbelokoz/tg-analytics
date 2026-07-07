@@ -159,7 +159,7 @@ const GROUPS = [
 ];
 const SRC = new Set(G_SRC), ROLE = new Set(G_ROLE), FMT = new Set(G_FMT), GRADE = new Set(G_GRADE);
 const tagClass = t => SRC.has(t) ? "src" : t==="Дайджест" ? "digest" : t==="З/п указана" ? "pay" : ROLE.has(t)?"role" : FMT.has(t)?"fmt" : GRADE.has(t)?"grade" : "";
-const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable"};
+const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable", workday:"Workday"};
 
 let data = [], active = new Set();
 

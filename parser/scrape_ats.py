@@ -246,6 +246,52 @@ def fetch_smartrecruiters(c):
     return out[:MAX_PER_COMPANY]
 
 
+_WD_REL = re.compile(r"(\d+)\s*\+?\s*day", re.I)
+
+
+def _workday_date(s):
+    """Workday отдаёт относительную дату («Posted 5 Days Ago») — переводим в
+    приблизительный ISO, чтобы карточка сортировалась в общей ленте."""
+    if not s:
+        return None
+    s = s.lower()
+    now = dt.datetime.now(dt.timezone.utc)
+    if "today" in s:
+        return now.isoformat()
+    if "yesterday" in s:
+        return (now - dt.timedelta(days=1)).isoformat()
+    m = _WD_REL.search(s)
+    if m:
+        return (now - dt.timedelta(days=int(m.group(1)))).isoformat()
+    return None
+
+
+def fetch_workday(c):
+    base = f"https://{c['tenant']}.{c['dc']}.myworkdayjobs.com"
+    cxs = f"{base}/wday/cxs/{c['tenant']}/{c['site']}/jobs"
+    out, off = [], 0
+    while len(out) < MAX_PER_COMPANY:
+        body = json.dumps({"appliedFacets": {}, "limit": 20, "offset": off,
+                           "searchText": ""}).encode()
+        req = urllib.request.Request(cxs, data=body, headers={
+            "User-Agent": UA, "Content-Type": "application/json", "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=25) as r:
+            d = json.loads(r.read().decode("utf-8", "replace"))
+        posts = d.get("jobPostings", [])
+        for j in posts:
+            path = j.get("externalPath", "")
+            loc = j.get("locationsText")
+            title = (j.get("title") or "").strip()
+            ext = (j.get("bulletFields") or [path])[0]
+            out.append(_rec(c["name"], c["slug"], "workday", ext, title, loc,
+                            work_format(f"{title} {loc or ''}"), None,
+                            f"{base}/en-US/{c['site']}{path}", _workday_date(j.get("postedOn"))))
+        off += len(posts)
+        if not posts or off >= d.get("total", 0):
+            break
+    return out[:MAX_PER_COMPANY]
+
+
 def fetch_workable(c):
     d = _get_json(f"https://apply.workable.com/api/v1/widget/accounts/{c['token']}?details=true")
     out = []
@@ -265,6 +311,7 @@ FETCH = {
     "ashby": fetch_ashby,
     "smartrecruiters": fetch_smartrecruiters,
     "workable": fetch_workable,
+    "workday": fetch_workday,
 }
 
 
