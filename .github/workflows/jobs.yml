@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "parser/scrape_posts.py"
+      - "parser/scrape_ats.py"
+      - "parser/companies_ats.json"
       - ".github/workflows/jobs.yml"
   # Основной планировщик — внешний пингер (cron-job.org) шлёт repository_dispatch
   # каждые 30 мин. Он бьёт по расписанию точно: API-запуск не попадает в очередь
@@ -50,6 +52,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python parser/export_json.py
+
+      # Career-сайты компаний: тянем напрямую из публичных API их ATS
+      # (Greenhouse/Lever/Ashby/…) в data/company_jobs.json. Supabase не нужен —
+      # это самодостаточный статический источник (см. parser/scrape_ats.py).
+      - name: Scrape company career sites (ATS)
+        run: python parser/scrape_ats.py
 
       - name: Commit data/ (triggers Vercel redeploy)
         run: bash .github/commit-data.sh
