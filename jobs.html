@@ -162,6 +162,13 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .more:hover{text-decoration:underline}
 .open{display:inline-flex;align-items:center;gap:5px;font:700 13px 'Manrope';color:#6b6f7e;margin-left:auto}
 .open:hover{color:var(--ink)}
+.qview{background:var(--pill);border:none;border-radius:9px;padding:7px 13px;font:800 12.5px 'Manrope';
+  color:var(--pill-ink);cursor:pointer;transition:.13s}
+.qview:hover{background:#e4e7ec}
+/* Клик по карточке-вакансии открывает саму вакансию; описание — по «Быстрый просмотр» */
+.post[data-link]{cursor:pointer}
+.post[data-kind="tg"] .ptext{max-height:none;overflow:visible;white-space:pre-wrap}
+.post[data-kind="tg"] .ptext::after{display:none}
 .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
 .tag{font-size:12px;font-weight:700;padding:4px 11px;border-radius:8px;background:var(--pill);color:var(--pill-ink)}
 .tag.tmore{color:#9095a5;background:transparent;padding-left:2px}
@@ -175,7 +182,7 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .feed.rows .ptitle{margin-top:4px;font-size:15.5px}
 .feed.rows .ptext{margin-top:5px;font-size:13.5px;max-height:1.55em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .feed.rows .ptext::after{display:none}
-.feed.rows .pacts{margin-top:6px}
+.feed.rows .pacts{display:none}
 .feed.rows .mpill{font-size:11.5px;padding:3px 8px}
 
 .sentinel{height:1px}
@@ -455,18 +462,21 @@ function cardTg(p){
   const skills=(p.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t));
   const views=p.views!=null?`<span class="v">${compact(p.views)} ${EYE}</span>`:"";
   const {title:jobTitle, company, body} = parseTgJob(p.text, p.tags);
-  const coPill = company?`<span class="mpill co">${esc(company)}</span>`:"";
-  const meta=metaPills([`@${p.username}`, ...fmt, ...grade]);
-  return `<div class="post" data-kind="tg">
-    <div class="ptop">${avatar(p)}
-      <span class="src-name">${esc(p.channel_title||p.username)}</span>${coPill}${meta}
+  // Источник (название TG-канала) скрываем; в шапке — компания, заголовок — должность.
+  // Аватар делаем по компании/должности, чтобы не раскрывать канал через фото.
+  const head = company || jobTitle || "Вакансия";
+  const ava = `<div class="ava" style="background:hsl(${hueOf(company||p.username)} 42% 46%)">${esc(head.trim().charAt(0).toUpperCase())}</div>`;
+  const meta=metaPills([...fmt, ...grade]);
+  return `<div class="post" data-kind="tg" data-link="${esc(p.link)}">
+    <div class="ptop">${ava}
+      ${company?`<span class="src-name">${esc(company)}</span>`:""}${meta}
       <span class="ptime">${timeAgo(p.posted_at)} ${views}</span>
     </div>
     ${jobTitle?`<div class="ptitle">${esc(jobTitle)}</div>`:""}
-    <div class="ptext">${esc(body||p.text)}</div>
+    <div class="ptext" hidden>${esc(body||p.text)}</div>
     <div class="pacts">
-      <button class="more" hidden>Показать полностью</button>
-      <a class="open" href="${esc(p.link)}" target="_blank" rel="noopener">Открыть в Telegram ${LINKOUT}</a>
+      <button class="qview" type="button">Быстрый просмотр</button>
+      <span class="open">Открыть вакансию ${LINKOUT}</span>
     </div>
     ${skills.length?`<div class="tags">${skillChips(skills)}</div>`:""}
   </div>`;
@@ -522,11 +532,18 @@ new IntersectionObserver((es)=>{
   if(es[0].isIntersecting && shown < filtered.length) appendBatch();
 },{rootMargin:"600px"}).observe(document.getElementById("sentinel"));
 
-// Разворачивание/сворачивание текста прямо в карточке.
+// «Быстрый просмотр» раскрывает описание внутри карточки; клик по остальной
+// части карточки открывает саму вакансию (пост в Telegram) в новой вкладке.
 document.getElementById("feed").addEventListener("click", e=>{
-  const btn=e.target.closest(".more"); if(!btn) return;
-  const post=btn.closest(".post"), open=post.classList.toggle("expanded");
-  btn.textContent=open?"Свернуть":"Показать полностью";
+  const qv=e.target.closest(".qview");
+  if(qv){
+    const t=qv.closest(".post").querySelector(".ptext");
+    t.hidden=!t.hidden;
+    qv.textContent=t.hidden?"Быстрый просмотр":"Скрыть описание";
+    return;
+  }
+  const post=e.target.closest(".post[data-link]");
+  if(post) window.open(post.dataset.link,"_blank","noopener");
 });
 
 // Нормализация двух источников в единую модель карточки.
