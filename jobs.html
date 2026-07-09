@@ -33,25 +33,36 @@ header{background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:
 .megatrigger .cv{width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
   transform:translateY(-2px) rotate(45deg);transition:transform .15s}
 .megatrigger.open .cv{transform:translateY(1px) rotate(-135deg)}
-.mega{position:fixed;left:0;right:0;top:60px;background:var(--card);border-bottom:1px solid var(--line);
-  box-shadow:0 24px 48px rgba(24,24,31,.12);padding:34px 0 38px;display:none;z-index:19}
-.mega.open{display:block}
-.mega-in{max-width:1440px;margin:0 auto;padding:0 24px}
-.mega-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:34px 40px}
+/* Категории — плавающий поповер поверх экрана (не во весь экран), легко закрыть */
+.mega{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-6px);
+  width:min(940px,calc(100vw - 28px));max-height:calc(100vh - 96px);overflow:auto;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 30px 70px rgba(24,24,31,.28);padding:0 26px 26px;display:none;z-index:30;
+  opacity:0;transition:opacity .15s,transform .15s}
+.mega.open{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+.mega-in{max-width:none;margin:0;padding:0}
+.mega-head{position:sticky;top:0;background:var(--card);display:flex;align-items:center;
+  justify-content:space-between;padding:18px 0 13px;margin-bottom:8px;border-bottom:1px solid var(--line);z-index:1}
+.mega-h{font-size:15px;font-weight:800}
+.mega-close{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:none;
+  border-radius:9px;background:var(--pill);color:var(--pill-ink);font-size:19px;line-height:1;cursor:pointer;transition:.13s}
+.mega-close:hover{background:#e4e7ec;color:var(--ink)}
+.mega-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px 30px}
 .mcol.wide{grid-column:span 2}
-.mtitle{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-bottom:15px}
-.mitems{columns:1;column-gap:40px}
+.mtitle{font-size:16px;font-weight:800;letter-spacing:-.01em;margin-bottom:12px}
+.mitems{columns:1;column-gap:30px}
 .mcol.wide .mitems{columns:2}
-.mitem{display:block;width:fit-content;margin-bottom:13px;font-size:15px;font-weight:600;color:#3a3d4a;
+.mitem{display:block;width:fit-content;margin-bottom:11px;font-size:14px;font-weight:600;color:#3a3d4a;
   cursor:pointer;transition:.12s;break-inside:avoid}
 .mitem:hover{color:#6366f1}
-.mdiv{height:1px;background:var(--line);margin:28px 0}
-.mega-bottom{display:grid;grid-template-columns:repeat(4,1fr);gap:34px 40px}
-.megaback{position:fixed;inset:60px 0 0;z-index:18;display:none}
+.mdiv{height:1px;background:var(--line);margin:22px 0}
+.mega-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:24px 30px}
+.megaback{position:fixed;inset:0;background:rgba(24,24,31,.32);z-index:25;display:none}
 .megaback.open{display:block}
 @media(max-width:860px){
   .mega-grid,.mega-bottom{grid-template-columns:repeat(2,1fr)}
   .mcol.wide{grid-column:span 2}
+  .mcol.wide .mitems{columns:1}
 }
 
 /* Hero */
@@ -133,16 +144,23 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .chip .x{font-weight:800;color:#93801d}
 
 /* Feed + card */
-.feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
 @media(max-width:1240px){.feed{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.feed{grid-template-columns:1fr}}
 .post{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
   box-shadow:0 1px 2px rgba(24,24,31,.03);transition:box-shadow .15s,border-color .15s}
+/* Одинаковый размер карточек: тянем по высоте ряда, «Открыть/теги» прижимаем к низу */
+.feed:not(.rows) .post{display:flex;flex-direction:column;height:100%;min-height:176px}
+.feed:not(.rows) .pacts{margin-top:auto}
+.feed:not(.rows) .post[data-kind="co"] .tags{margin-top:auto}
+.feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .post:hover{border-color:#dfe2e8;box-shadow:0 8px 24px rgba(24,24,31,.07)}
 .ptop{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .ava{position:relative;overflow:hidden;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
 .avimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
+.ava.brand{box-shadow:inset 0 0 0 1px rgba(24,24,31,.06)}
 .src-name{font-weight:800;font-size:13.5px}
 .mpill{font-size:12px;font-weight:700;color:var(--pill-ink);background:var(--pill);padding:4px 10px;border-radius:8px;white-space:nowrap}
 .mpill.co{background:#eaf3ff;color:#1573c4;font-weight:800}
@@ -187,6 +205,19 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 
 .sentinel{height:1px}
 .state{padding:56px 20px;text-align:center;color:#9095a5;font-weight:600;font-size:15px}
+
+/* Скелетоны на время загрузки ленты */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
+  display:flex;flex-direction:column;min-height:176px}
+.sk{background:linear-gradient(90deg,#ececf0 25%,#f5f6f8 50%,#ececf0 75%);background-size:200% 100%;
+  animation:shimmer 1.4s ease-in-out infinite;border-radius:8px;flex-shrink:0}
+.skel-top{display:flex;align-items:center;gap:9px;margin-bottom:16px}
+.sk-ava{width:30px;height:30px;border-radius:50%}
+.skel-tags{display:flex;gap:7px;margin-top:auto;padding-top:16px}
+.feed.rows .skel-card{min-height:0;padding:14px 18px;flex-direction:row;align-items:center;gap:12px}
+.feed.rows .skel-card>.sk{margin:0!important}
+.feed.rows .skel-top,.feed.rows .skel-tags{display:none}
 footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 
 @media(max-width:860px){
@@ -294,6 +325,67 @@ const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%3
 const EYE = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 const LINKOUT = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 
+// Промо-подписи каналов («При отклике укажите, что нашли вакансию на …»,
+// «Подписывайтесь…», «Канал не участвует в найме…» и т.п.) — это не часть
+// вакансии, а реклама канала. Вырезаем такие строки из текста поста.
+const PROMO = [
+  /при отклике укажите/i,
+  /нашл[иа].{0,20}ваканси/i,
+  /подпис(ывайт|ать|ка|ан)/i,
+  /канал не участвует в найме/i,
+  /откликаясь на ваканси/i,
+  /больше ваканси[йя]/i,
+  /перейти на канал/i,
+  /задать вопрос/i,
+  /email[-\s]?рассылк/i,
+  /правилами использования канала/i,
+  /наш канал\b/i,
+  /\bв\s?MAX\b/,
+  /реклама\b|\berid\b/i,
+];
+function stripPromo(text){
+  if(!text) return text;
+  return text.split("\n")
+    .filter(ln=>{ const s=ln.trim(); return !s || !PROMO.some(re=>re.test(s)); })
+    .join("\n").replace(/\n{3,}/g,"\n\n").trim();
+}
+
+// Известные компании → фирменный цвет кружка-логотипа. Внешние картинки грузить
+// нельзя (доступность в РФ, см. PROJECT.md), поэтому «логотип» — фирменный цвет
+// фона + буква. Значение: строка (белая буква) или [фон, цвет буквы].
+const norm = s => (s||"").toLowerCase().replace(/[^a-zа-я0-9]/gi,"");
+const BRANDS = {
+  openai:"#10a37f", anthropic:"#d97757", stripe:"#635bff", databricks:"#ff3621",
+  datadog:"#632ca6", snowflake:"#29b5e8", spacex:"#1b1b1f", airbnb:"#ff5a5f",
+  reddit:"#ff4500", figma:"#f24e1e", notion:"#1b1b1f", coinbase:"#0052ff",
+  binance:["#f0b90b","#181a20"], roblox:"#e2231a", canva:"#00c4cc", twilio:"#f22f46",
+  okta:"#007dc1", xai:"#1b1b1f", waymo:"#00a15a", affirm:"#4a4af4",
+  elevenlabs:"#1b1b1f", mistralai:"#ff7000", clickhouse:["#ffcc01","#1c1c1c"],
+  riotgames:"#d13639", wiz:"#4d3ff5", asana:"#f06a6a", cohere:"#39594c",
+  scaleai:"#1b1b1f", airwallex:"#612fff", okx:"#1b1b1f", canonical:"#e95420",
+  crowdstrike:"#e01a22", alphasense:"#1e4ae9", nebius:"#1c1c1c", coreweave:"#1b1b1f",
+  google:"#4285f4", microsoft:"#00a4ef", apple:"#1b1b1f", amazon:["#ff9900","#131a22"],
+  meta:"#0866ff", netflix:"#e50914", nvidia:["#76b900","#1b1b1f"], tesla:"#e82127",
+  uber:"#1b1b1f", spotify:"#1db954", github:"#1b1b1f", gitlab:"#fc6d26",
+  discord:"#5865f2", telegram:"#2aabee", revolut:"#1b1b1f", nubank:"#820ad1",
+  yandex:"#fc3f1d", ozon:"#005bff", vk:"#0077ff", sber:"#21a038",
+  tinkoff:["#ffdd2d","#1b1b1f"], tbank:["#ffdd2d","#1b1b1f"], wildberries:"#cb11ab",
+  avito:"#04b34f", jetbrains:"#1b1b1f",
+};
+function brandOf(name){
+  const b=BRANDS[norm(name)];
+  if(!b) return null;
+  return Array.isArray(b) ? {bg:b[0],fg:b[1]} : {bg:b,fg:"#fff"};
+}
+// Кружок-аватар: у известной компании — фирменный цвет (логотип-бейдж),
+// иначе — стабильный цвет по имени + буква.
+function badge(name, fallbackHue){
+  const initial=esc((name||"?").trim().charAt(0).toUpperCase());
+  const b=brandOf(name);
+  const style=b?`background:${b.bg};color:${b.fg}`:`background:hsl(${fallbackHue} 42% 46%);color:#fff`;
+  return `<div class="ava${b?" brand":""}" style="${style}">${initial}</div>`;
+}
+
 function timeAgo(iso){
   if(!iso) return "";
   const s=(Date.now()-new Date(iso))/1000;
@@ -313,11 +405,10 @@ function avatar(c){
   const img=c.channel_photo?`<img class="avimg" src="${esc(c.channel_photo)}" alt="" loading="lazy" onerror="this.remove()">`:"";
   return `<div class="ava" style="background:${bg}">${initial}${img}</div>`;
 }
-// Аватар компании — только буква на цветном фоне (без внешних картинок: у ATS
-// нет РФ-безопасного CDN логотипов, а грузить их из браузера нельзя, см. PROJECT.md).
+// Аватар компании: известная — с фирменным цветом-логотипом (badge), остальные —
+// буква на стабильном цвете по имени (без внешних картинок, см. PROJECT.md).
 function avatarCo(j){
-  const initial=esc((j.company||"?").trim().charAt(0).toUpperCase());
-  return `<div class="ava" style="background:hsl(${hueOf(j.company_slug||j.company)} 42% 46%)">${initial}</div>`;
+  return badge(j.company, hueOf(j.company_slug||j.company));
 }
 
 // Малая группа: обычные чипы. Большая: поле-триггер + раскрываемый список с поиском,
@@ -432,9 +523,7 @@ function parseTgJob(text, tags){
   title = title.replace(/[\s:—–-]+$/u,"").slice(0,90);
   // заголовки-подборки/дайджесты — это не должность
   if(/^(ваканс|подборк|дайджест|кого ищ|свежие|горячие|новые ваканс|топ[- ])/i.test(title)) title=null;
-  // тело поста без строки, ушедшей в заголовок (иначе дублируется)
-  const body = title && rawHead ? text.replace(rawHead, "").replace(/^\s+/, "") : text;
-  return {title: title||null, company, body};
+  return {title: title||null, company};
 }
 
 // Карточка вакансии с career-сайта компании (данные из публичного API её ATS).
@@ -461,19 +550,21 @@ function cardTg(p){
   const fmt=(p.tags||[]).filter(t=>FMT.has(t));
   const skills=(p.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t));
   const views=p.views!=null?`<span class="v">${compact(p.views)} ${EYE}</span>`:"";
-  const {title:jobTitle, company, body} = parseTgJob(p.text, p.tags);
+  const {title:jobTitle, company} = parseTgJob(p.text, p.tags);
   // Источник (название TG-канала) скрываем; в шапке — компания, заголовок — должность.
-  // Аватар делаем по компании/должности, чтобы не раскрывать канал через фото.
+  // Аватар по компании/должности: у известной компании — фирменный логотип-бейдж.
   const head = company || jobTitle || "Вакансия";
-  const ava = `<div class="ava" style="background:hsl(${hueOf(company||p.username)} 42% 46%)">${esc(head.trim().charAt(0).toUpperCase())}</div>`;
+  const ava = badge(head, hueOf(company||p.username));
   const meta=metaPills([...fmt, ...grade]);
+  // В описании (быстрый просмотр) оставляем полный текст поста, включая строку с
+  // должностью и компанией — только вырезаем промо-подписи канала.
   return `<div class="post" data-kind="tg" data-link="${esc(p.link)}">
     <div class="ptop">${ava}
       ${company?`<span class="src-name">${esc(company)}</span>`:""}${meta}
       <span class="ptime">${timeAgo(p.posted_at)} ${views}</span>
     </div>
     ${jobTitle?`<div class="ptitle">${esc(jobTitle)}</div>`:""}
-    <div class="ptext" hidden>${esc(body||p.text)}</div>
+    <div class="ptext" hidden>${esc(stripPromo(p.text))}</div>
     <div class="pacts">
       <button class="qview" type="button">Быстрый просмотр</button>
       <span class="open">Открыть вакансию ${LINKOUT}</span>
@@ -527,6 +618,21 @@ function renderFeed(){
 }
 const plural=(n,one,few,many)=>{const m=n%100,d=n%10;return(m>=11&&m<=14)?many:d===1?one:(d>=2&&d<=4)?few:many;};
 
+// Скелет карточки на время загрузки: шапка (аватар+имя+время), заголовок в 2 строки, теги.
+const SKEL=`<div class="skel-card">
+  <div class="skel-top"><div class="sk sk-ava"></div>
+    <div class="sk" style="width:38%;height:13px"></div>
+    <div class="sk" style="margin-left:auto;width:46px;height:12px"></div></div>
+  <div class="sk" style="height:17px;width:82%"></div>
+  <div class="sk" style="height:17px;width:54%;margin-top:9px"></div>
+  <div class="skel-tags"><div class="sk" style="width:70px;height:24px"></div>
+    <div class="sk" style="width:54px;height:24px"></div></div>
+</div>`;
+function renderSkeletons(n=9){
+  document.getElementById("state").hidden=true;
+  document.getElementById("feed").innerHTML=Array.from({length:n},()=>SKEL).join("");
+}
+
 // Дорендер при подходе к концу ленты.
 new IntersectionObserver((es)=>{
   if(es[0].isIntersecting && shown < filtered.length) appendBatch();
@@ -573,7 +679,7 @@ async function load(){
     data=tg.map(normTg).concat(co.map(normCo));
     sortData();
     renderFilters(); renderFeed();
-  }catch(e){ state.hidden=false; state.textContent="Ошибка загрузки: "+e.message; }
+  }catch(e){ document.getElementById("feed").innerHTML=""; state.hidden=false; state.textContent="Ошибка загрузки: "+e.message; }
 }
 
 document.getElementById("q").addEventListener("input", renderFeed);
@@ -595,6 +701,7 @@ document.getElementById("viewtoggle").addEventListener("click", e=>{
   applyView();
 });
 applyView();
+renderSkeletons();   // показываем скелетоны, пока грузится лента
 
 // Мега-меню категорий. Каждый пункт либо включает готовый фильтр ленты (f — тег
 // из GROUPS), либо, если прямого тега нет, ищет по тексту (q). Без f/q — поиск по
@@ -639,9 +746,12 @@ function megaCol(c){
 }
 function renderMega(){
   document.getElementById("megaIn").innerHTML =
+    `<div class="mega-head"><span class="mega-h">Категории</span>`+
+      `<button class="mega-close" id="megaClose" type="button" aria-label="Закрыть">×</button></div>`+
     `<div class="mega-grid">${MEGA_TOP.map(megaCol).join("")}</div>`+
     `<div class="mdiv"></div>`+
     `<div class="mega-bottom">${MEGA_BOTTOM.map(megaCol).join("")}</div>`;
+  document.getElementById("megaClose").addEventListener("click",()=>toggleMega(false));
 }
 function toggleMega(open){
   const on = open ?? !document.getElementById("mega").classList.contains("open");
