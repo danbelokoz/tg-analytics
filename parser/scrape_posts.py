@@ -128,15 +128,21 @@ def _hits(groups, text):
 def tag_post(text):
     roles = _hits(ROLE, text)
     fmt = _hits(FORMAT, text)
+    grade = _hits(GRADE, text)
+    employ = _hits(EMPLOY, text)
     pay = ["З/п указана"] if _SALARY.search(text) else []
     # дайджест (по маркеру или по 5+ ролям в одном посте) — не спамим ролями
     if _DIGEST.search(text) or len(roles) >= 5:
         return list(dict.fromkeys(["Дайджест"] + fmt + pay)), True
     tags = list(dict.fromkeys(
-        roles + _hits(STACK, text) + fmt + _hits(GRADE, text) + _hits(EMPLOY, text) + pay
+        roles + _hits(STACK, text) + fmt + grade + employ + pay
     ))
     has_vac = bool(_VAC.search(text))
-    is_vacancy = bool(roles) or has_vac
+    # Лучше отсечь лишнее, чем пропустить мусор: одно упоминание роли ≠ вакансия
+    # (статья мимоходом назвала роль). Роль засчитываем только вместе со «структурным»
+    # признаком вакансии — грейд/формат/з-п/занятость. Явный маркер найма достаточен сам.
+    corroborated = bool(grade or fmt or employ or pay)
+    is_vacancy = has_vac or (bool(roles) and corroborated)
     # Реклама/курсы/промо без явных маркеров найма — не вакансия, даже если есть роль
     if _ADV.search(text) and not has_vac:
         is_vacancy = False

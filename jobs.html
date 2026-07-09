@@ -158,10 +158,10 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 @media(max-width:680px){.feed{grid-template-columns:1fr}}
 .post{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
   box-shadow:0 1px 2px rgba(24,24,31,.03);transition:box-shadow .15s,border-color .15s}
-/* Одинаковый размер карточек: тянем по высоте ряда, «Открыть/теги» прижимаем к низу */
+/* Одинаковый размер карточек: тянем по высоте ряда, теги прижимаем к низу */
 .feed:not(.rows) .post{display:flex;flex-direction:column;height:100%;min-height:176px}
-.feed:not(.rows) .pacts{margin-top:auto}
-.feed:not(.rows) .post[data-kind="co"] .tags{margin-top:auto}
+.feed:not(.rows) .post .tags{margin-top:auto}
+.post{cursor:pointer}
 .feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .post:hover{border-color:#dfe2e8;box-shadow:0 8px 24px rgba(24,24,31,.07)}
@@ -176,29 +176,39 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .ptime{margin-left:auto;color:#9095a5;font-size:12px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
 .ptime .v{display:inline-flex;align-items:center;gap:4px}
 .ptitle{display:inline-block;margin-top:13px;font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
-.ptitle:hover{color:#1573c4}
-.pexc{margin-top:8px;color:var(--muted);font-size:13.5px;line-height:1.5}
-.ptext{position:relative;margin-top:12px;font-size:14px;line-height:1.55;color:#31323c;white-space:pre-wrap;
-  overflow-wrap:anywhere;max-height:9.3em;overflow:hidden}
-.post.expanded .ptext{max-height:none}
-.ptext::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.4em;
-  background:linear-gradient(rgba(255,255,255,0),#fff);pointer-events:none;opacity:0;transition:opacity .15s}
-.post.hasmore:not(.expanded) .ptext::after{opacity:1}
-.pacts{display:flex;align-items:center;gap:16px;margin-top:12px}
-.more{background:none;border:none;padding:0;font:800 13px 'Manrope';color:#1573c4;cursor:pointer}
-.more:hover{text-decoration:underline}
-.open{display:inline-flex;align-items:center;gap:5px;font:700 13px 'Manrope';color:#6b6f7e;margin-left:auto}
-.open:hover{color:var(--ink)}
-.qview{background:var(--pill);border:none;border-radius:9px;padding:7px 13px;font:800 12.5px 'Manrope';
-  color:var(--pill-ink);cursor:pointer;transition:.13s}
-.qview:hover{background:#e4e7ec}
-/* Клик по карточке-вакансии открывает саму вакансию; описание — по «Быстрый просмотр» */
-.post[data-link]{cursor:pointer}
-.post[data-kind="tg"] .ptext{max-height:none;overflow:visible;white-space:pre-wrap}
-.post[data-kind="tg"] .ptext::after{display:none}
+.post:hover .ptitle{color:#1573c4}
+/* Описание вакансии — единый шрифт для обоих источников (карточки компаний и TG). */
+.pexc{margin-top:8px;color:var(--muted);font:400 13.5px/1.5 'Manrope'}
 .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
 .tag{font-size:12px;font-weight:700;padding:4px 11px;border-radius:8px;background:var(--pill);color:var(--pill-ink)}
 .tag.tmore{color:#9095a5;background:transparent;padding-left:2px}
+
+/* Страница вакансии: описание, источник, работодатель, теги и кнопка «Откликнуться» */
+.detail{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;display:none}
+.detail.open{display:block}
+body.noscroll{overflow:hidden}
+.detail-in{max-width:760px;margin:0 auto;padding:22px 24px 60px}
+.dback{display:inline-flex;align-items:center;gap:6px;margin-bottom:16px;padding:10px 15px;border:1px solid var(--line);
+  border-radius:12px;background:var(--card);font:800 13px 'Manrope';color:var(--ink);cursor:pointer;transition:.13s}
+.dback:hover{border-color:#d7dae2}
+.dcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px 30px;
+  box-shadow:0 1px 2px rgba(24,24,31,.03)}
+.dtop{display:flex;align-items:center;gap:12px}
+.dtop .ava{width:44px;height:44px;font-size:18px}
+.dhead-txt{min-width:0}
+.dcompany{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.dsource{font-size:12.5px;font-weight:700;color:var(--muted);margin-top:2px}
+.dtime{margin-left:auto;color:#9095a5;font-size:12.5px;font-weight:700;white-space:nowrap}
+.dtitle{margin-top:20px;font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
+.dmeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.dsec{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9095a5;margin:24px 0 10px}
+/* Описание на странице вакансии — тот же единый шрифт Manrope, что и в карточках. */
+.ddesc{font:400 15px/1.65 'Manrope';color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere}
+.dtags{display:flex;gap:7px;flex-wrap:wrap}
+.dapply{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:28px;padding:16px;
+  border-radius:14px;background:var(--yellow);color:#18181f;font:800 15px 'Manrope';cursor:pointer;transition:.15s}
+.dapply:hover{background:var(--yellow-h)}
+@media(max-width:680px){.dcard{padding:22px 20px}.dtitle{font-size:21px}}
 
 /* Построчный вид ленты (компактный список вместо карточек) */
 .feed.rows{display:block;gap:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
@@ -207,9 +217,6 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .feed.rows .post:hover{box-shadow:none;background:#fafbfc}
 .feed.rows .pexc,.feed.rows .tags{display:none}
 .feed.rows .ptitle{margin-top:4px;font-size:15.5px}
-.feed.rows .ptext{margin-top:5px;font-size:13.5px;max-height:1.55em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.feed.rows .ptext::after{display:none}
-.feed.rows .pacts{display:none}
 .feed.rows .mpill{font-size:11.5px;padding:3px 8px}
 
 .sentinel{height:1px}
@@ -249,6 +256,7 @@ footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 </div></header>
 <div class="megaback" id="megaback"></div>
 <div class="mega" id="mega"><div class="mega-in" id="megaIn"></div></div>
+<div class="detail" id="detail"></div>
 
 <div class="wrap">
   <div class="hero">
@@ -342,7 +350,13 @@ let rowView = localStorage.getItem("jobs_view")==="rows";
 const DROPDOWN_MIN = 7;
 let openGroups = new Set(), groupSearch = {};
 
-const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// Часть данных из скрейпа уже HTML-экранирована (напр. channel_title
+// «Job in IT&amp;Digital»). Сначала декодируем такие сущности, затем экранируем
+// заново — иначе на странице виден двойной энкодинг («&amp;»).
+const ENT = {"&amp;":"&","&lt;":"<","&gt;":">","&quot;":'"',"&#39;":"'","&#039;":"'","&nbsp;":" "};
+const esc = s => String(s??"")
+  .replace(/&(?:amp|lt|gt|quot|#0?39|nbsp);/g, m=>ENT[m])
+  .replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const compact = n => n==null ? "" : Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n).replace(".",",");
 const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%360; return h; };
 const EYE = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -381,7 +395,7 @@ function stripPromo(text){
 const SAL_NOISE = /(инвестиц|invest|раунд|valuation|капитализ|команд|бюджет|budget|\bMAU\b|\bARR\b|\bMRR\b|оборот|выручк|оценивается|оценка комп|стоимост)/i;
 const SAL_KW    = /(зарплат|з\/п|з\.п|з\/пл|оклад|доход|заработн|вилк|компенсац|salary|на руки|\bfrom\b)/i;
 const SAL_DUR   = /(лет|год|года|мес|month|year)/i;
-const SAL_TOKEN = /(\d[\d  ]*\d|\d)\s*(к|k|тыс[а-я.]*)?/gi;
+const SAL_TOKEN = /(\d[\d\s]*\d|\d)\s*(к|k|тыс[а-я.]*)?/gi;
 const SAL_RATE  = {"$":90, "€":100};
 function parseSalary(text){
   if(!text) return [];
@@ -390,14 +404,14 @@ function parseSalary(text){
     const ln=raw.trim(); if(!ln) continue;
     if(SAL_NOISE.test(ln) && !SAL_KW.test(ln)) continue;                 // строка про деньги компании, не оклад
     const hasCur=/[$€₽]|руб|USD|EUR|RUB/i.test(ln);
-    const hasK  =/\d[  ]*[кk]/i.test(ln) || /тыс/i.test(ln);
+    const hasK  =/\d\s*[кk]/i.test(ln) || /тыс/i.test(ln);
     if(!(SAL_KW.test(ln) || hasCur || hasK)) continue;                   // в строке нет признаков зарплаты
     const rate = /[$]|USD/i.test(ln) ? SAL_RATE["$"] : (/€|EUR/i.test(ln) ? SAL_RATE["€"] : 1);
     const vals=[]; let m; SAL_TOKEN.lastIndex=0;
     while((m=SAL_TOKEN.exec(ln))){
       const suf=m[2], tail=ln.slice(m.index+m[0].length, m.index+m[0].length+6);
       if(!suf && SAL_DUR.test(tail)) continue;                           // «от 2 лет», «6 месяцев» — не деньги
-      let n=parseFloat(m[1].replace(/[  ]/g,"").replace(",","."));
+      let n=parseFloat(m[1].replace(/\s/g,"").replace(",","."));
       if(!isFinite(n)) continue;
       if(suf) n*=1000;                                                   // 200к / $6K / 80 тыс
       else if(rate===1 && n<1000) n*=1000;                              // «150» в рублёвой строке = 150k
@@ -502,6 +516,19 @@ function groupDropdown(label, present, freq){
   </div>`;
 }
 
+// Блок фильтра по зарплате: пилюли-диапазоны в две колонки (как на макете).
+// Счётчики — сколько вакансий попадает в диапазон; диапазоны без вакансий скрываем.
+function salaryGroup(label){
+  if(!SAL_COUNTS) return "";
+  const cells=SAL_BUCKETS.map((b,i)=>{
+    if(!SAL_COUNTS[i]) return "";
+    const on=active.has(b.label);
+    return `<button class="salchip${on?" on":""}" data-sal="${esc(b.label)}">${esc(b.label)}<span class="n">${compact(SAL_COUNTS[i])}</span></button>`;
+  }).join("");
+  if(!cells) return "";
+  return `<div class="fgroup"><h4>${esc(label)}</h4><div class="salgrid">${cells}</div></div>`;
+}
+
 // Левое меню фильтров: теги, реально встречающиеся в данных, сгруппированы.
 function renderFilters(){
   const freq={};
@@ -510,6 +537,7 @@ function renderFilters(){
   let html="";
   if(active.size) html+=`<button class="clearbtn" data-clear="1">× Сбросить фильтры (${active.size})</button>`;
   for(const [label, members] of GROUPS){
+    if(members===SAL_MARK){ html += salaryGroup(label); continue; }
     const present=members.filter(t=>freq[t]).sort((a,b)=>freq[b]-freq[a]);
     if(!present.length) continue;
     html += present.length>=DROPDOWN_MIN ? groupDropdown(label,present,freq) : groupChips(label,present,freq);
@@ -522,6 +550,11 @@ function renderFilters(){
     const t=b.dataset.t; active.has(t)?active.delete(t):active.add(t);
     renderFilters(); renderFeed();
     if(b.dataset.g && openGroups.has(b.dataset.g)) focusSearch(b.dataset.g);
+  });
+  // диапазоны зарплат — OR внутри группы
+  el.querySelectorAll("[data-sal]").forEach(b=>b.onclick=()=>{
+    const t=b.dataset.sal; active.has(t)?active.delete(t):active.add(t);
+    renderFilters(); renderFeed();
   });
   const clr=el.querySelector("[data-clear]");
   if(clr) clr.onclick=()=>{ active.clear(); renderFilters(); renderFeed(); };
@@ -555,11 +588,14 @@ function skillChips(skills){
 // Неидеально (~65%): дайджесты и анонимные посты остаются без company — тогда
 // карточка показывает как раньше (канал + текст).
 const CO_STOP = /^(москв|петербург|спб|санкт|росси|remote|удал|дистанц|офис|гибрид|команд|стартап|компани|проект|ваканс|it\b|hr\b|финтех|екатеринб|новосиб|казан|сша|европ|азия|dubai|дубай)/i;
+// Аббревиатуры и слова-должности, ошибочно попадающие в «компанию»
+// (напр. «Chief Technology Officer / CTO» → «CTO» — это должность, не компания).
+const ROLE_WORD = /^(c[a-z]?o|ciso|vp|pm|po|pmm|ba|sa|qa|tl|hrd|hrbp|smm|pr|ux|ui|team\s?lead|tech\s?lead|(?:back|front|full[\s-]?stack)[\s-]?end|developer|engineer|manager|designer|analyst|architect|specialist|lead|intern|разработчик\w*|инженер\w*|менеджер\w*|дизайнер\w*|аналитик\w*|директор\w*|руководител\w*|специалист\w*|стажёр\w*|тимлид\w*)$/i;
 function cleanCo(s){
   s = (s||"").replace(/^[^\p{L}\p{N}]+/u,"").trim();
   s = s.split(/\s{2,}|https?:|[.,:;•|]|\s+[—–-]\s+/u)[0].trim();      // отсечь хвост/ссылку/пунктуацию
   s = s.replace(/\s+(?:ищет|ищут|нанимает|hiring|команда).*$/iu,"").trim();
-  if(!s || s.length<2 || CO_STOP.test(s) || !/\p{L}/u.test(s)) return null;
+  if(!s || s.length<2 || CO_STOP.test(s) || ROLE_WORD.test(s) || !/\p{L}/u.test(s)) return null;
   return s.slice(0,40);
 }
 function parseTgJob(text, tags){
@@ -600,6 +636,19 @@ function firstLine(text){
   }
   return "";
 }
+// Краткое описание для карточки: текст поста без промо, строки-заголовка и
+// хэштегов, схлопнутый в одну строку — чтобы карточки TG и компаний выглядели
+// одинаково (единый шрифт .pexc). Полный текст показываем на странице вакансии.
+function tgExcerpt(text, title){
+  const t=stripPromo(text)||"";
+  const body=t.split("\n").map(s=>s.trim()).filter(s=>{
+    if(!s) return false;
+    if(title && s.replace(/[\s:—–-]+$/u,"")===title) return false;
+    if(s.startsWith("#") && s.split(/\s+/).length<=6) return false;
+    return true;
+  });
+  return (body.join(" ")||t).replace(/\s+/g," ").trim().slice(0,200);
+}
 
 // Карточка вакансии с career-сайта компании (данные из публичного API её ATS).
 function cardCo(j){
@@ -608,12 +657,12 @@ function cardCo(j){
   const ats=ATS_NAME[j.ats]||j.ats||"";
   const meta=metaPills([j.location, j.work_format, ...grade]);
   const excerpt=j.excerpt?`<div class="pexc">${esc(j.excerpt)}</div>`:"";
-  return `<div class="post" data-kind="co">
+  return `<div class="post" data-kind="co" data-id="${j._id}">
     <div class="ptop">${avatarCo(j)}
       <span class="src-name">${esc(j.company)}</span>${meta}
       <span class="ptime">${timeAgo(j.posted_at)} · ${esc(ats)}</span>
     </div>
-    <a class="ptitle" href="${esc(j.apply_url)}" target="_blank" rel="noopener">${esc(j.title)}</a>
+    <div class="ptitle">${esc(j.title)}</div>
     ${excerpt}
     ${skills.length?`<div class="tags">${skillChips(skills)}</div>`:""}
   </div>`;
@@ -635,19 +684,15 @@ function cardTg(p){
   // Аватар: у известной компании — фирменный логотип-бейдж, иначе — по каналу.
   const ava = badge(company||srcName, hueOf(company||p.username));
   const meta=metaPills([...fmt, ...grade]);
-  // В описании (быстрый просмотр) оставляем полный текст поста, включая строку с
-  // должностью и компанией — только вырезаем промо-подписи канала.
-  return `<div class="post" data-kind="tg" data-link="${esc(p.link)}">
+  const exc=tgExcerpt(p.text, title);
+  // Полный текст поста показываем на странице вакансии (клик по карточке).
+  return `<div class="post" data-kind="tg" data-id="${p._id}">
     <div class="ptop">${ava}
       <span class="src-name">${esc(srcName)}</span>${meta}
       <span class="ptime">${timeAgo(p.posted_at)} ${views}</span>
     </div>
     <div class="ptitle">${esc(title)}</div>
-    <div class="ptext" hidden>${esc(stripPromo(p.text))}</div>
-    <div class="pacts">
-      <button class="qview" type="button">Быстрый просмотр</button>
-      <span class="open">Открыть вакансию ${LINKOUT}</span>
-    </div>
+    ${exc?`<div class="pexc">${esc(exc)}</div>`:""}
     ${skills.length?`<div class="tags">${skillChips(skills)}</div>`:""}
   </div>`;
 }
@@ -655,10 +700,12 @@ function cardTg(p){
 // Отфильтрованный список: источник (OR внутри) + теги (AND) + поиск по тексту.
 function applyFilters(){
   const term=document.getElementById("q").value.trim().toLowerCase();
-  const sel=[...active], srcSel=sel.filter(t=>SRC.has(t)), tagSel=sel.filter(t=>!SRC.has(t));
+  const sel=[...active], srcSel=sel.filter(t=>SRC.has(t)), salSel=sel.filter(t=>SAL.has(t)),
+        tagSel=sel.filter(t=>!SRC.has(t)&&!SAL.has(t));
   return data.filter(p=>
     (!srcSel.length || srcSel.includes(p._src)) &&
     tagSel.every(t=>(p.tags||[]).includes(t)) &&
+    (!salSel.length || salSel.some(k=>salMatch(p,k))) &&
     (!term || p._search.includes(term))
   );
 }
@@ -670,16 +717,10 @@ let filtered=[], shown=0;
 
 function appendBatch(){
   const feed=document.getElementById("feed");
-  const from=feed.children.length;
   const slice=filtered.slice(shown, shown+BATCH);
   feed.insertAdjacentHTML("beforeend",
     slice.map(p=> p._src==="Компании" ? cardCo(p) : cardTg(p)).join(""));
   shown+=slice.length;
-  // «Показать полностью» только для длинных Telegram-постов, среди новых карточек.
-  Array.from(feed.children).slice(from).forEach(post=>{
-    const pt=post.querySelector(".ptext"), more=post.querySelector(".more");
-    if(pt && more && pt.scrollHeight > pt.clientHeight + 2){ post.classList.add("hasmore"); more.hidden=false; }
-  });
 }
 
 function renderFeed(){
@@ -717,19 +758,83 @@ new IntersectionObserver((es)=>{
   if(es[0].isIntersecting && shown < filtered.length) appendBatch();
 },{rootMargin:"600px"}).observe(document.getElementById("sentinel"));
 
-// «Быстрый просмотр» раскрывает описание внутри карточки; клик по остальной
-// части карточки открывает саму вакансию (пост в Telegram) в новой вкладке.
+// Клик по карточке открывает страницу вакансии (описание, источник, работодатель,
+// теги и кнопка «Откликнуться»). Маршрут через hash — чтобы работал браузерный «Назад».
 document.getElementById("feed").addEventListener("click", e=>{
-  const qv=e.target.closest(".qview");
-  if(qv){
-    const t=qv.closest(".post").querySelector(".ptext");
-    t.hidden=!t.hidden;
-    qv.textContent=t.hidden?"Быстрый просмотр":"Скрыть описание";
-    return;
-  }
-  const post=e.target.closest(".post[data-link]");
-  if(post) window.open(post.dataset.link,"_blank","noopener");
+  const post=e.target.closest(".post[data-id]");
+  if(post) openDetail(post.dataset.id);
 });
+
+// ——— Страница вакансии ———
+const byId = new Map();       // _id → вакансия (заполняется в load)
+const BACK = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
+
+// Единая модель детальной страницы для TG-поста и ATS-вакансии: описание, откуда
+// вакансия (источник), работодатель, теги и ссылка для отклика.
+function detailModel(p){
+  const grade=(p.tags||[]).filter(t=>GRADE.has(t));
+  const fmt=(p.tags||[]).filter(t=>FMT.has(t));
+  const skills=(p.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t));
+  if(p._src==="Компании"){
+    const ats=ATS_NAME[p.ats]||p.ats||"";
+    return {
+      ava:avatarCo(p), company:p.company,
+      source:`Career-сайт компании${ats?` · ${esc(ats)}`:""}`,
+      title:p.title, desc:p.excerpt||"Полное описание — на странице вакансии.",
+      meta:metaPills([p.location,p.work_format,...grade]), skills, apply:p.apply_url,
+    };
+  }
+  const {title:jt, company:co}=parseTgJob(p.text,p.tags);
+  const isDigest=(p.tags||[]).includes("Дайджест");
+  const ch=p.username?"@"+esc(p.username):esc(p.channel_title||"");
+  return {
+    ava:badge(co||p.channel_title||p.username, hueOf(co||p.username)),
+    company:co||p.channel_title||p.username||"Вакансия",
+    source:`Telegram-канал${ch?` · ${ch}`:""}`,
+    title:jt||firstLine(p.text)||(isDigest?"Подборка вакансий":"Вакансия"),
+    desc:stripPromo(p.text)||"—",
+    meta:metaPills([...fmt,...grade]), skills, apply:p.link,
+  };
+}
+function detailHtml(p){
+  const m=detailModel(p);
+  return `<div class="detail-in">
+    <button class="dback" type="button">${BACK} Все вакансии</button>
+    <article class="dcard">
+      <div class="dtop">${m.ava}
+        <div class="dhead-txt"><div class="dcompany">${esc(m.company)}</div>
+          <div class="dsource">${m.source}</div></div>
+        <span class="dtime">${timeAgo(p.posted_at)}</span>
+      </div>
+      <h1 class="dtitle">${esc(m.title)}</h1>
+      ${m.meta?`<div class="dmeta">${m.meta}</div>`:""}
+      <div class="dsec">Описание</div>
+      <div class="ddesc">${esc(m.desc)}</div>
+      ${m.skills.length?`<div class="dsec">Метки</div><div class="dtags">${m.skills.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
+      <a class="dapply" href="${esc(m.apply)}" target="_blank" rel="noopener">Откликнуться ${LINKOUT}</a>
+    </article>
+  </div>`;
+}
+function openDetail(id){ if(location.hash!=="#job="+id) location.hash="job="+id; }
+function closeDetail(){
+  const d=document.getElementById("detail");
+  d.classList.remove("open"); d.innerHTML=""; document.body.classList.remove("noscroll");
+}
+function routeDetail(){
+  const m=(location.hash||"").match(/^#job=(\d+)$/);
+  if(m && byId.has(+m[1])){
+    const d=document.getElementById("detail");
+    d.innerHTML=detailHtml(byId.get(+m[1]));
+    d.classList.add("open"); d.scrollTop=0; document.body.classList.add("noscroll");
+  }else closeDetail();
+}
+// Клик по «Назад» или по фону вне карточки закрывает страницу через историю,
+// чтобы браузерная кнопка «Назад» вела себя так же.
+document.getElementById("detail").addEventListener("click", e=>{
+  if(e.target.closest(".dcard")) return;
+  if(location.hash.startsWith("#job=")) history.back(); else closeDetail();
+});
+window.addEventListener("hashchange", routeDetail);
 
 // Не публикуем НЕ-вакансии: новости, статьи, тех-советы, промо каналов.
 // Зеркалит логику классификатора парсера (scrape_posts.py): пост считаем
@@ -737,21 +842,28 @@ document.getElementById("feed").addEventListener("click", e=>{
 // без явного найма отсеиваем. Страховка на фронте — JSON может содержать посты,
 // размеченные старой (мягкой) версией классификатора, до переразметки скрейпером.
 const ROLE_SET = new Set(G_ROLE);
+// «Структурные» признаки вакансии: грейд/формат/занятость/з-п. Одно упоминание
+// роли без них — обычно статья, а не вакансия.
+const CORROB_SET = new Set([...G_GRADE, ...G_FMT, ...G_EMPLOY, "З/п указана"]);
 const VAC_RE = /ваканс|ищ(?:ем|ет|у|ете|ут)(?![а-яё])|в поиске\s+\S|требуется|требуются|в команду|hiring|we['\s]?re looking|we are looking|looking for a|открыт[аы]?\s+(?:вакансия|позиц|наб)|обязанност|требовани[яей]|мы предлагаем|что предлагаем|условия работы|з\/п|зарплат|оклад|вилка\s|резюме|откликнут|apply now|join (?:our|the) team|должность[:\s]|позиция[:\s]/i;
 const ADV_RE = /(?<![а-яёa-z])курс|обучени|научит[ьс]|запиш[иу]|вебинар|интенсив|мастер-?класс|марафон|буткемп|bootcamp|наставник|подписывайт|подписка на|промокод|розыгрыш|скидк|(?<![а-яёa-z])реклам|\berid\b|разбор.{0,15}резюме|карьерн\w*\s+консультац/i;
 function looksLikeVacancy(p){
   const tags=p.tags||[], text=p.text||"";
   if(tags.includes("Дайджест")) return true;            // подборки вакансий оставляем
   const strong=VAC_RE.test(text);
-  let v = tags.some(t=>ROLE_SET.has(t)) || strong;
-  if(ADV_RE.test(text) && !strong) v=false;             // реклама/курсы/контент без найма
-  return v;
+  if(ADV_RE.test(text) && !strong) return false;        // реклама/курсы/контент без найма
+  // Лучше отсечь лишнее, чем пропустить мусор: роль засчитываем как вакансию только
+  // вместе со структурным признаком (грейд/формат/занятость/з-п); явный маркер найма
+  // достаточен сам по себе.
+  const role=tags.some(t=>ROLE_SET.has(t)), corrob=tags.some(t=>CORROB_SET.has(t));
+  return strong || (role && corrob);
 }
 
 // Нормализация двух источников в единую модель карточки.
 function normTg(p){
   p._src="Telegram";
   p._search=((p.text||"")+" "+(p.channel_title||"")+" "+(p.username||"")).toLowerCase();
+  p._salIv=parseSalary(p.text);              // зарплата разбирается из текста поста
   return p;
 }
 function normCo(j){
@@ -759,6 +871,7 @@ function normCo(j){
   if(j.work_format) tags.push(j.work_format);   // формат работы — фильтруемым тегом
   j.tags=tags; j._src="Компании";
   j._search=((j.title||"")+" "+(j.company||"")+" "+(j.location||"")).toLowerCase();
+  j._salIv=[];                                // у ATS-вакансий нет поля зарплаты
   return j;
 }
 function sortData(){
@@ -773,8 +886,12 @@ async function load(){
   try{
     const [tg, co]=await Promise.all([grab("data/job_feed.json"), grab("data/company_jobs.json")]);
     data=tg.filter(looksLikeVacancy).map(normTg).concat(co.map(normCo));
+    data.forEach((p,i)=>{ p._id=i; byId.set(i,p); });   // стабильный id для страницы вакансии
+    // счётчики диапазонов зарплат — один раз по загруженным данным
+    SAL_COUNTS=SAL_BUCKETS.map(b=>data.reduce((c,p)=>c+(salMatch(p,b.label)?1:0),0));
     sortData();
     renderFilters(); renderFeed();
+    routeDetail();                                      // открыть страницу вакансии, если в URL #job=<id>
   }catch(e){ document.getElementById("feed").innerHTML=""; state.hidden=false; state.textContent="Ошибка загрузки: "+e.message; }
 }
 
@@ -866,7 +983,11 @@ function pickCat(it){
 renderMega();
 document.getElementById("megatrigger").addEventListener("click",e=>{e.stopPropagation();toggleMega();});
 document.getElementById("megaback").addEventListener("click",()=>toggleMega(false));
-document.addEventListener("keydown",e=>{ if(e.key==="Escape") toggleMega(false); });
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape") return;
+  if(location.hash.startsWith("#job=")) history.back();   // закрыть страницу вакансии
+  toggleMega(false);
+});
 document.getElementById("megaIn").addEventListener("click",e=>{
   const a=e.target.closest(".mitem"); if(!a) return;
   const sec=(MEGA_TOP.concat(MEGA_BOTTOM)).find(c=>c.t===a.dataset.sec);
