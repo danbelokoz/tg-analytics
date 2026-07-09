@@ -13,13 +13,13 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.wrap{max-width:1560px;margin:0 auto;padding:0 24px}
 a{color:inherit;text-decoration:none}
 .ico{display:inline-block;vertical-align:-2px;flex-shrink:0}
 
 /* Header */
 header{background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
-.nav{display:flex;align-items:center;gap:26px;height:60px;max-width:1180px;margin:0 auto;padding:0 24px}
+.nav{display:flex;align-items:center;gap:26px;height:60px;max-width:1560px;margin:0 auto;padding:0 24px}
 .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
 .logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#2AABEE,#6366f1);display:inline-flex;align-items:center;justify-content:center;color:#fff}
 .nav a.tab{font-weight:700;color:#6b6f7e;font-size:13.5px;transition:.15s}
@@ -32,9 +32,9 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .sub{color:var(--muted);font-size:14.5px;margin-top:8px;line-height:1.55;max-width:700px}
 
 /* Layout */
-.layout{display:flex;gap:24px;align-items:flex-start;padding:20px 0 44px}
-.sidebar{width:264px;flex-shrink:0;position:sticky;top:76px;max-height:calc(100vh - 96px);overflow:auto;
-  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 18px 6px}
+.layout{display:flex;gap:20px;align-items:flex-start;padding:20px 0 44px}
+.sidebar{width:300px;flex-shrink:0;position:sticky;top:76px;max-height:calc(100vh - 96px);overflow:auto;
+  background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 16px 4px}
 .main{flex:1;min-width:0}
 
 /* Search */
@@ -60,20 +60,44 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .count b{color:var(--ink);font-weight:800}
 
 /* Sidebar filters */
-.sbtitle{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9095a5;padding:0 0 14px}
-.fgroup{margin-bottom:18px}
-.fgroup h4{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:10px}
-.fgroup .chips{display:flex;gap:8px;flex-wrap:wrap}
-.chip{padding:8px 13px;border-radius:10px;border:1px solid transparent;background:var(--pill);
-  font:800 12.5px 'Manrope';color:var(--pill-ink);cursor:pointer;transition:.13s;white-space:nowrap;
-  display:inline-flex;align-items:center;gap:7px}
+.sbtitle{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9095a5;padding:0 0 10px}
+.fgroup{margin-bottom:12px}
+.fgroup h4{font-size:12px;font-weight:800;color:var(--ink);margin-bottom:7px}
+.fgroup .chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 10px;border-radius:9px;border:1px solid transparent;background:var(--pill);
+  font:800 12px 'Manrope';color:var(--pill-ink);cursor:pointer;transition:.13s;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:5px}
 .chip:hover{background:#e4e7ec}
 .chip.on{background:var(--yellow);color:#18181f}
-.chip .n{font-size:11px;font-weight:800;color:#adb1be}
+.chip .n{font-size:10.5px;font-weight:800;color:#adb1be}
 .chip.on .n{color:#93801d}
-.clearbtn{width:100%;padding:10px;border-radius:11px;border:1px solid #f3d0d0;background:#fff;color:#dc2626;
-  font:800 12.5px 'Manrope';cursor:pointer;transition:.15s;margin-bottom:12px}
+.clearbtn{width:100%;padding:9px;border-radius:10px;border:1px solid #f3d0d0;background:#fff;color:#dc2626;
+  font:800 12px 'Manrope';cursor:pointer;transition:.15s;margin-bottom:10px}
 .clearbtn:hover{background:#fef2f2}
+
+/* Выпадающий список (для групп с большим числом вариантов) */
+.fsel{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);
+  font:700 12.5px 'Manrope';color:#9095a5;cursor:pointer;transition:.13s}
+.fsel:hover{border-color:#d7dae2}
+.fsel .cv{width:7px;height:7px;border-right:2px solid #9095a5;border-bottom:2px solid #9095a5;
+  transform:translateY(-2px) rotate(45deg);transition:transform .15s;flex-shrink:0;margin-right:2px}
+.fsel.open .cv{transform:translateY(1px) rotate(-135deg)}
+.fpanel{display:none;margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.fpanel.open{display:block}
+.fsearch{width:100%;padding:8px 11px;border:none;border-bottom:1px solid var(--line);
+  background:var(--card);font:600 12.5px 'Manrope';color:var(--ink);outline:none}
+.fsearch::placeholder{color:#adb1be}
+.foptlist{max-height:196px;overflow:auto;padding:4px}
+.fopt{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  padding:7px 9px;border:none;border-radius:7px;background:none;
+  font:800 12px 'Manrope';color:var(--pill-ink);cursor:pointer;text-align:left}
+.fopt:hover{background:var(--pill)}
+.fopt.on{background:var(--yellow);color:#18181f}
+.fopt .n{font-size:10.5px;font-weight:800;color:#adb1be}
+.fopt.on .n{color:#93801d}
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip .x{font-weight:800;color:#93801d}
 
 /* Feed + card */
 .feed{display:flex;flex-direction:column;gap:12px}
@@ -192,6 +216,9 @@ const SRC = new Set(G_SRC), FMT = new Set(G_FMT), GRADE = new Set(G_GRADE);
 const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable", workday:"Workday"};
 
 let data = [], active = new Set(), sortNewest = true;
+// Группы, у которых вариантов >= DROPDOWN_MIN, показываем выпадающим списком с поиском.
+const DROPDOWN_MIN = 7;
+let openGroups = new Set(), groupSearch = {};
 
 const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const compact = n => n==null ? "" : Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n).replace(".",",");
@@ -225,6 +252,33 @@ function avatarCo(j){
   return `<div class="ava" style="background:hsl(${hueOf(j.company_slug||j.company)} 42% 46%)">${initial}</div>`;
 }
 
+// Малая группа: обычные чипы. Большая: поле-триггер + раскрываемый список с поиском,
+// выбранное показываем чипами под полем (как на референс-макете).
+function groupChips(label, present, freq){
+  const chips=present.map(t=>`<button class="chip ${active.has(t)?"on":""}" data-t="${esc(t)}">${esc(t)}<span class="n">${freq[t]}</span></button>`).join("");
+  return `<div class="fgroup"><h4>${esc(label)}</h4><div class="chips">${chips}</div></div>`;
+}
+function groupDropdown(label, present, freq){
+  const open=openGroups.has(label), q=(groupSearch[label]||"").trim().toLowerCase();
+  const sel=present.filter(t=>active.has(t));
+  const opts=present.map(t=>{
+    const hide = q && !t.toLowerCase().includes(q) ? ' style="display:none"' : "";
+    return `<button class="fopt ${active.has(t)?"on":""}" data-t="${esc(t)}" data-g="${esc(label)}"${hide}>${esc(t)}<span class="n">${freq[t]}</span></button>`;
+  }).join("");
+  const chips=sel.map(t=>`<button class="chip on" data-t="${esc(t)}">${esc(t)}<span class="x">×</span></button>`).join("");
+  return `<div class="fgroup">
+    <h4>${esc(label)}</h4>
+    <div class="fsel ${open?"open":""}" data-g="${esc(label)}">
+      <span>Искать ${esc(label.toLowerCase())}…</span><span class="cv"></span>
+    </div>
+    <div class="fpanel ${open?"open":""}">
+      <input class="fsearch" data-g="${esc(label)}" placeholder="Поиск…" value="${esc(groupSearch[label]||"")}">
+      <div class="foptlist">${opts}</div>
+    </div>
+    ${chips?`<div class="fchips">${chips}</div>`:""}
+  </div>`;
+}
+
 // Левое меню фильтров: теги, реально встречающиеся в данных, сгруппированы.
 function renderFilters(){
   const freq={};
@@ -235,14 +289,32 @@ function renderFilters(){
   for(const [label, members] of GROUPS){
     const present=members.filter(t=>freq[t]).sort((a,b)=>freq[b]-freq[a]);
     if(!present.length) continue;
-    const chips=present.map(t=>`<button class="chip ${active.has(t)?"on":""}" data-t="${esc(t)}">${esc(t)}<span class="n">${freq[t]}</span></button>`).join("");
-    html+=`<div class="fgroup"><h4>${esc(label)}</h4><div class="chips">${chips}</div></div>`;
+    html += present.length>=DROPDOWN_MIN ? groupDropdown(label,present,freq) : groupChips(label,present,freq);
   }
   el.innerHTML=html;
-  el.querySelectorAll("[data-t],[data-clear]").forEach(b=>b.onclick=()=>{
-    if(b.dataset.clear){ active.clear(); }
-    else { const t=b.dataset.t; active.has(t)?active.delete(t):active.add(t); }
+
+  const focusSearch=g=>{ const i=el.querySelector(`.fsearch[data-g="${g}"]`); if(i){ i.focus(); i.setSelectionRange(i.value.length,i.value.length); } };
+  // выбор/снятие тега (чип, опция списка или выбранный чип) + сброс
+  el.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{
+    const t=b.dataset.t; active.has(t)?active.delete(t):active.add(t);
     renderFilters(); renderFeed();
+    if(b.dataset.g && openGroups.has(b.dataset.g)) focusSearch(b.dataset.g);
+  });
+  const clr=el.querySelector("[data-clear]");
+  if(clr) clr.onclick=()=>{ active.clear(); renderFilters(); renderFeed(); };
+  // открыть/закрыть выпадающий список
+  el.querySelectorAll(".fsel").forEach(b=>b.onclick=()=>{
+    const g=b.dataset.g; openGroups.has(g)?openGroups.delete(g):openGroups.add(g);
+    renderFilters();
+    if(openGroups.has(g)) focusSearch(g);
+  });
+  // поиск внутри списка — прячем неподходящие опции без перерисовки (не теряем фокус)
+  el.querySelectorAll(".fsearch").forEach(inp=>inp.oninput=()=>{
+    const g=inp.dataset.g; groupSearch[g]=inp.value;
+    const q=inp.value.trim().toLowerCase();
+    inp.closest(".fpanel").querySelectorAll(".fopt").forEach(o=>{
+      o.style.display = (!q || o.dataset.t.toLowerCase().includes(q)) ? "" : "none";
+    });
   });
 }
 
