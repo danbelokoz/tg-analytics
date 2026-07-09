@@ -35,7 +35,7 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .layout{display:flex;gap:20px;align-items:flex-start;padding:20px 0 44px}
 .sidebar{width:300px;flex-shrink:0;position:sticky;top:76px;max-height:calc(100vh - 96px);overflow:auto;
   background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 16px 4px}
-.main{flex:1;min-width:0}
+.main{flex:1;min-width:0;padding-right:32px}
 
 /* Search */
 .searchbar{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;
@@ -154,7 +154,7 @@ footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 @media(max-width:860px){
   .layout{flex-direction:column;gap:14px}
   .sidebar{width:100%;position:static;max-height:280px;order:2}
-  .main{width:100%;order:1}
+  .main{width:100%;order:1;padding-right:0}
   .fgroup{margin-bottom:14px}
 }
 </style>
