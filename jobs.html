@@ -158,19 +158,26 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 @media(max-width:680px){.feed{grid-template-columns:1fr}}
 .post{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
   box-shadow:0 1px 2px rgba(24,24,31,.03);transition:box-shadow .15s,border-color .15s}
-/* Одинаковый размер карточек: тянем по высоте ряда, теги прижимаем к низу */
-.feed:not(.rows) .post{display:flex;flex-direction:column;height:100%;min-height:176px}
+/* Одинаковый размер карточек: тянем по высоте ряда. Зоны фиксированы —
+   заголовок в 2 строки, описание в 2 строки, теги+кнопки прижаты к низу, —
+   поэтому названия и описания всех карточек выровнены, а теги не «скачут». */
+.feed:not(.rows) .post{display:flex;flex-direction:column;height:100%;min-height:238px}
 .feed:not(.rows) .post .tags{margin-top:auto}
 .post{cursor:pointer}
-.feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
+.feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
+/* Зона тегов не выпускает пилюли за свои пределы (макс. две строки). */
+.feed:not(.rows) .tags{max-height:64px;overflow:hidden}
 .post:hover{border-color:#dfe2e8;box-shadow:0 8px 24px rgba(24,24,31,.07)}
-.ptop{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+/* Шапка карточки — всегда одна строка фиксированной высоты, чтобы заголовки
+   всех карточек стартовали на одном уровне (пилюли формата/грейда ушли в нижнюю
+   зону тегов). */
+.ptop{display:flex;align-items:center;gap:9px;min-height:30px}
 .ava{position:relative;overflow:hidden;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
   justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
 .avimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
 .ava.brand{box-shadow:inset 0 0 0 1px rgba(24,24,31,.06)}
-.src-name{font-weight:800;font-size:13.5px}
+.src-name{font-weight:800;font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mpill{font-size:12px;font-weight:700;color:var(--pill-ink);background:var(--pill);padding:4px 10px;border-radius:8px;white-space:nowrap}
 .mpill.co{background:#eaf3ff;color:#1573c4;font-weight:800}
 .ptime{margin-left:auto;color:#9095a5;font-size:12px;font-weight:700;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
@@ -183,8 +190,22 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .tag{font-size:12px;font-weight:700;padding:4px 11px;border-radius:8px;background:var(--pill);color:var(--pill-ink)}
 .tag.tmore{color:#9095a5;background:transparent;padding-left:2px}
 
+/* Действия в карточке: «Быстрый просмотр» (превью на сайте) и «Открыть вакансию»
+   (источник в новой вкладке). Компактные, в одну строку — не занимают лишней высоты. */
+.pacts{display:flex;align-items:center;gap:8px;margin-top:13px}
+.qview,.open{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  border-radius:10px;padding:8px 12px;font:800 12.5px 'Manrope';cursor:pointer;white-space:nowrap;transition:.13s}
+/* «Быстрый просмотр» тянется на свободное место, «Открыть» — по содержимому,
+   чтобы обе подписи всегда помещались в одну строку даже в узкой 3-колоночной сетке. */
+.qview{flex:1;min-width:0;background:var(--pill);border:1px solid transparent;color:var(--pill-ink)}
+.qview:hover{background:#e4e7ec}
+.open{flex:0 0 auto;background:var(--card);border:1px solid var(--line);color:#4a4d5a}
+.open:hover{border-color:#d7dae2;color:var(--ink)}
+
 /* Страница вакансии: описание, источник, работодатель, теги и кнопка «Откликнуться» */
-.detail{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto;display:none}
+/* Страница вакансии — фиксированный слой ПОД хедером (top:61px = высота хедера
+   с бордером), z-index ниже хедера, чтобы навигация оставалась видимой. */
+.detail{position:fixed;left:0;right:0;top:61px;bottom:0;z-index:15;background:var(--bg);overflow:auto;display:none}
 .detail.open{display:block}
 body.noscroll{overflow:hidden}
 .detail-in{max-width:760px;margin:0 auto;padding:22px 24px 60px}
@@ -215,7 +236,7 @@ body.noscroll{overflow:hidden}
 .feed.rows .post{border:none;border-radius:0;border-bottom:1px solid var(--line);box-shadow:none;padding:12px 18px}
 .feed.rows .post:last-child{border-bottom:none}
 .feed.rows .post:hover{box-shadow:none;background:#fafbfc}
-.feed.rows .pexc,.feed.rows .tags{display:none}
+.feed.rows .pexc,.feed.rows .tags,.feed.rows .pacts{display:none}
 .feed.rows .ptitle{margin-top:4px;font-size:15.5px}
 .feed.rows .mpill{font-size:11.5px;padding:3px 8px}
 
@@ -225,7 +246,7 @@ body.noscroll{overflow:hidden}
 /* Скелетоны на время загрузки ленты */
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
-  display:flex;flex-direction:column;min-height:176px}
+  display:flex;flex-direction:column;min-height:238px}
 .sk{background:linear-gradient(90deg,#ececf0 25%,#f5f6f8 50%,#ececf0 75%);background-size:200% 100%;
   animation:shimmer 1.4s ease-in-out infinite;border-radius:8px;flex-shrink:0}
 .skel-top{display:flex;align-items:center;gap:9px;margin-bottom:16px}
@@ -655,16 +676,23 @@ function cardCo(j){
   const grade=(j.tags||[]).filter(t=>GRADE.has(t));
   const skills=(j.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t));
   const ats=ATS_NAME[j.ats]||j.ats||"";
-  const meta=metaPills([j.location, j.work_format, ...grade]);
-  const excerpt=j.excerpt?`<div class="pexc">${esc(j.excerpt)}</div>`:"";
-  return `<div class="post" data-kind="co" data-id="${j._id}">
+  // Пилюли формата/грейда/локации теперь в нижней зоне тегов (единая зона — не
+  // «скачут» и не двигают заголовок). Верхняя строка — только компания и время.
+  const tags=metaPills([j.location, j.work_format, ...grade])+skillChips(skills);
+  // Описание есть у всех карточек: короткое из ATS, иначе — отдел/локация.
+  const excerpt=j.excerpt || [j.department, j.location].filter(Boolean).join(" · ") || "Открытая вакансия — подробности на career-сайте.";
+  return `<div class="post" data-kind="co" data-id="${j._id}" data-link="${esc(j.apply_url)}">
     <div class="ptop">${avatarCo(j)}
-      <span class="src-name">${esc(j.company)}</span>${meta}
+      <span class="src-name">${esc(j.company)}</span>
       <span class="ptime">${timeAgo(j.posted_at)} · ${esc(ats)}</span>
     </div>
     <div class="ptitle">${esc(j.title)}</div>
-    ${excerpt}
-    ${skills.length?`<div class="tags">${skillChips(skills)}</div>`:""}
+    <div class="pexc">${esc(excerpt)}</div>
+    ${tags?`<div class="tags">${tags}</div>`:""}
+    <div class="pacts">
+      <button class="qview" type="button">Быстрый просмотр</button>
+      <a class="open" href="${esc(j.apply_url)}" target="_blank" rel="noopener">Открыть ${LINKOUT}</a>
+    </div>
   </div>`;
 }
 
@@ -683,17 +711,23 @@ function cardTg(p){
   const srcName = company || p.channel_title || p.username || "Вакансия";
   // Аватар: у известной компании — фирменный логотип-бейдж, иначе — по каналу.
   const ava = badge(company||srcName, hueOf(company||p.username));
-  const meta=metaPills([...fmt, ...grade]);
-  const exc=tgExcerpt(p.text, title);
-  // Полный текст поста показываем на странице вакансии (клик по карточке).
-  return `<div class="post" data-kind="tg" data-id="${p._id}">
+  // Пилюли формата/грейда — в нижней зоне тегов вместе со скиллами (единая зона).
+  const tags=metaPills([...fmt, ...grade])+skillChips(skills);
+  // Описание есть у всех карточек: если пост без содержательного тела — подсказка.
+  const exc=tgExcerpt(p.text, title) || "Открыть вакансию — подробности в источнике.";
+  // Полный текст поста показываем на странице вакансии («Быстрый просмотр»).
+  return `<div class="post" data-kind="tg" data-id="${p._id}" data-link="${esc(p.link)}">
     <div class="ptop">${ava}
-      <span class="src-name">${esc(srcName)}</span>${meta}
+      <span class="src-name">${esc(srcName)}</span>
       <span class="ptime">${timeAgo(p.posted_at)} ${views}</span>
     </div>
     <div class="ptitle">${esc(title)}</div>
-    ${exc?`<div class="pexc">${esc(exc)}</div>`:""}
-    ${skills.length?`<div class="tags">${skillChips(skills)}</div>`:""}
+    <div class="pexc">${esc(exc)}</div>
+    ${tags?`<div class="tags">${tags}</div>`:""}
+    <div class="pacts">
+      <button class="qview" type="button">Быстрый просмотр</button>
+      <a class="open" href="${esc(p.link)}" target="_blank" rel="noopener">Открыть ${LINKOUT}</a>
+    </div>
   </div>`;
 }
 
@@ -761,8 +795,9 @@ new IntersectionObserver((es)=>{
 // Клик по карточке открывает страницу вакансии (описание, источник, работодатель,
 // теги и кнопка «Откликнуться»). Маршрут через hash — чтобы работал браузерный «Назад».
 document.getElementById("feed").addEventListener("click", e=>{
+  if(e.target.closest(".open")) return;           // «Открыть вакансию» — обычная ссылка в новую вкладку
   const post=e.target.closest(".post[data-id]");
-  if(post) openDetail(post.dataset.id);
+  if(post) openDetail(post.dataset.id);            // клик по карточке и «Быстрый просмотр» — превью на сайте
 });
 
 // ——— Страница вакансии ———
