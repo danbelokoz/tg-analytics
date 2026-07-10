@@ -31,3 +31,26 @@ forproducts
 geekjobs
 young_relocate
 talentmove_channel
+
+# Добавлены 2026-07-10 после проверки контента (доля постов-вакансий на t.me/s/,
+# тем же классификатором, что и лента). Отклонены как не-вакансионные:
+# zloy_kollega (мемы про работу), ozoncamp и t_crew (employer-brand/культура),
+# Stud_Career (промо стажировок/курсов/магистратур). yojob и morejobs — реальные
+# вакансии в терсном формате «<роль> в <Компания>», который текущий классификатор
+# недооценивает (см. заметку).
+jobster_resume
+comeinlena
+freetasks
+avito_career
+ya_jobs_pm
+rabota_go
+digital_jobster
+naudalenkebro
+jobster_guru
+rabota_freelancee
+forchiefs
+dddwork
+budujobs
+morejobs
+yojob
+theblueprintcareer
