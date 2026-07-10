@@ -455,8 +455,12 @@ function salMatch(p, label){
 // исходной валюте). Оценку берём из data/salary_bench.json, когда вилки нет.
 const CUR_RUB = {USD:90, EUR:100, GBP:115, RUB:1};
 const CUR_SYM = {USD:"$", EUR:"€", GBP:"£", RUB:"₽"};
-let SAL_BENCH = null;                                  // грузится в load()
+let SAL_BENCH = null, SAL_BENCH_INTL = null;           // грузятся в load()
 const _kShort = n => n>=1e6 ? (n/1e6).toFixed(1).replace(/\.0$/,"").replace(".",",")+"M" : Math.round(n/1000)+"k";
+// Локация в США? Оценку по levels.fyi применяем только к US-вакансиям — в других
+// странах разброс total comp слишком велик (см. salary_bench_intl.json).
+const US_RX=/\b(United States|USA|U\.S\.|US[-\s]|,\s?(?:CA|NY|WA|TX|MA|IL|CO|GA|FL|OR|VA|NC|PA|NJ|DC)\b|New York|San Francisco|Seattle|Austin|Boston|Los Angeles|Chicago|Denver|Atlanta|Mountain View|Menlo Park|Palo Alto|Sunnyvale|Bay Area|Remote[,\s-]+US)\b/i;
+const isUS = loc => !!loc && US_RX.test(loc);
 // «150–200k ₽» (или одиночное «200k ₽»); для валют — «$150K–$200K».
 function fmtRub(lo,hi){ return (lo===hi?_kShort(lo):_kShort(lo)+"–"+_kShort(hi))+" ₽"; }
 function fmtCur(lo,hi,cur){
@@ -464,23 +468,29 @@ function fmtCur(lo,hi,cur){
   const s=CUR_SYM[cur]||"", k=n=> n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,"")+"M":Math.round(n/1000)+"K";
   return lo===hi ? s+k(lo) : s+k(lo)+"–"+s+k(hi);
 }
-// Оценка ₽/мес по грейду и роли (ровно один грейд и одна роль — иначе слишком
-// широко, не показываем). База — медианы Habr Career, множитель — по роли.
-function estimateSalary(p){
-  if(!SAL_BENCH) return null;
-  const tags=p.tags||[];
-  const grade=tags.find(t=>GRADE.has(t));
-  const roles=tags.filter(t=>G_ROLE.includes(t));
+// Оценка вилки по бенчмарку: нужен ровно один грейд и одна роль (иначе слишком
+// широко). База × множитель роли ± spread. Возвращает [lo,hi] в валюте бенчмарка.
+function benchEstimate(tags, bench, round){
+  if(!bench) return null;
+  const grade=(tags||[]).find(t=>GRADE.has(t));
+  const roles=(tags||[]).filter(t=>G_ROLE.includes(t));
   if(!grade || roles.length!==1) return null;
-  const base=SAL_BENCH.grade_base[grade]; if(!base) return null;
-  const mult=SAL_BENCH.role_mult[roles[0]] ?? SAL_BENCH.default_mult;
-  const mid=base*mult, sp=SAL_BENCH.spread, r=n=>Math.round(n/5000)*5000;
-  return [r(mid*(1-sp)), r(mid*(1+sp))];
+  const base=bench.grade_base[grade]; if(!base) return null;
+  const mult=bench.role_mult[roles[0]] ?? bench.default_mult;
+  const mid=base*mult, sp=bench.spread, r=round||5000;
+  return [Math.round(mid*(1-sp)/r)*r, Math.round(mid*(1+sp)/r)*r];
+}
+// RU/TG: оценка ₽/мес (Habr Career).
+function estimateSalary(p){ return benchEstimate(p.tags, SAL_BENCH, 5000); }
+// ATS/US: оценка $/год (levels.fyi). Только для US-локаций.
+function estimateIntl(j){
+  if(!isUS(j.location)) return null;
+  return benchEstimate(j.tags, SAL_BENCH_INTL, 5000);
 }
 // Что показать в карточке/на странице: реальная вилка или оценка (est:true).
 function salaryInfo(p){
   if(p._salDisp)    return {text:p._salDisp,    est:false};
-  if(p._salEstDisp) return {text:p._salEstDisp, est:true};
+  if(p._salEstDisp) return {text:p._salEstDisp, est:true, intl:!!p._salEstIntl};
   return null;
 }
 
@@ -881,7 +891,7 @@ function detailHtml(p){
       </div>
       <h1 class="dtitle">${esc(m.title)}</h1>
       ${m.meta?`<div class="dmeta">${m.meta}</div>`:""}
-      ${(()=>{const s=salaryInfo(p);return s?`<div class="dsec">Зарплата</div><div class="dsal${s.est?" est":""}">${esc(s.text)}${s.est?`<span class="dsal-note">оценка по рынку (грейд + роль), а не из вакансии</span>`:""}</div>`:"";})()}
+      ${(()=>{const s=salaryInfo(p);if(!s)return"";const note=s.intl?"оценка, рынок США (levels.fyi), total comp/год — не из вакансии":"оценка по рынку (грейд + роль), а не из вакансии";return `<div class="dsec">Зарплата</div><div class="dsal${s.est?" est":""}">${esc(s.text)}${s.est?`<span class="dsal-note">${note}</span>`:""}</div>`;})()}
       <div class="dsec">Описание</div>
       <div class="ddesc">${esc(m.desc)}</div>
       ${m.skills.length?`<div class="dsec">Метки</div><div class="dtags">${m.skills.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
@@ -970,16 +980,23 @@ async function load(){
   const grab=async(url)=>{ const r=await fetch(url,{cache:"no-cache"}); return r.ok?r.json():[]; };
   const grabObj=async(url)=>{ try{ const r=await fetch(url,{cache:"no-cache"}); return r.ok?r.json():null; }catch{ return null; } };
   try{
-    const [tg, co, bench]=await Promise.all([
-      grab("data/job_feed.json"), grab("data/company_jobs.json"), grabObj("data/salary_bench.json")]);
-    SAL_BENCH=bench;                                     // таблица оценки (может отсутствовать)
+    const [tg, co, bench, benchIntl]=await Promise.all([
+      grab("data/job_feed.json"), grab("data/company_jobs.json"),
+      grabObj("data/salary_bench.json"), grabObj("data/salary_bench_intl.json")]);
+    SAL_BENCH=bench; SAL_BENCH_INTL=benchIntl;           // таблицы оценки (могут отсутствовать)
     data=tg.filter(looksLikeVacancy).map(normTg).concat(co.map(normCo));
-    // Оценка зарплаты там, где реальной вилки нет (только RU/TG — бенчмарк по RU-рынку).
+    // Оценка, где реальной вилки нет:
+    //  • TG (RU-рынок) → ₽/мес, участвует в фильтре по зарплате;
+    //  • ATS US-локации → $/год (levels.fyi), только для показа (в ₽-фильтр не мешаем).
     data.forEach(p=>{
       if(p._salIv&&p._salIv.length) return;
-      if(p._src!=="Telegram") return;
-      const est=estimateSalary(p);
-      if(est){ p._salEst=[est]; p._salEstDisp="≈ "+fmtRub(est[0],est[1]); }
+      if(p._src==="Telegram"){
+        const est=estimateSalary(p);
+        if(est){ p._salEst=[est]; p._salEstDisp="≈ "+fmtRub(est[0],est[1]); }
+      } else {
+        const est=estimateIntl(p);
+        if(est){ p._salEstDisp="≈ "+fmtCur(est[0],est[1],"USD"); p._salEstIntl=true; }
+      }
     });
     data.forEach((p,i)=>{ p._id=i; byId.set(i,p); });   // стабильный id для страницы вакансии
     // счётчики диапазонов зарплат — один раз по загруженным данным (реальные + оценка)

@@ -1,12 +1,31 @@
 {
   "_note": "Оценка зарплаты, ₽/мес (gross). Используется как ПРИБЛИЖЕНИЕ, когда вилка в вакансии не указана. Грейд-базы — по медианам Habr Career (career.habr.com/salaries); множители ролей — приближение, калибруется нашими распарсенными вилками. Обновлять при новом отчёте Habr Career.",
   "currency": "RUB",
-  "grade_base": { "Junior": 96000, "Middle": 177000, "Senior": 303000, "Lead": 379000 },
+  "grade_base": {
+    "Junior": 96000,
+    "Middle": 177000,
+    "Senior": 303000,
+    "Lead": 379000
+  },
   "role_mult": {
-    "Data/ML": 1.25, "DevOps": 1.2, "Backend": 1.1, "Fullstack": 1.1, "Mobile": 1.05,
-    "Frontend": 1.0, "Product": 1.15, "Management": 1.2, "Аналитик": 0.95, "QA": 0.85,
-    "Project": 0.9, "Design": 0.85, "Sales": 0.8, "Marketing": 0.75, "HR": 0.7, "Support": 0.6
+    "Data/ML": 1.25,
+    "DevOps": 1.2,
+    "Backend": 1.1,
+    "Fullstack": 1.1,
+    "Mobile": 1.05,
+    "Frontend": 1.0,
+    "Product": 1.15,
+    "Management": 1.2,
+    "Аналитик": 0.95,
+    "QA": 0.85,
+    "Project": 0.9,
+    "Design": 0.85,
+    "Sales": 0.66,
+    "Marketing": 0.75,
+    "HR": 0.7,
+    "Support": 0.6
   },
   "default_mult": 0.9,
-  "spread": 0.22
+  "spread": 0.22,
+  "_calibrated": "role_mult: 1 ролей откалибровано по нашим TG-вилкам (n>=5, коридор 0.4-2.0, сжатие к prior K=6); остальные — prior от Habr Career. Перезапускать по мере накопления вилок."
 }

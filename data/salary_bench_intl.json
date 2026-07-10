@@ -1,0 +1,14 @@
+{
+  "_note": "Оценка total comp (base+stock+bonus), $/год, для вакансий с career-сайтов компаний на рынке США. Ориентир — агрегаты levels.fyi для средне-крупного tech (ниже FAANG-топа). ПРИМЕНЯТЬ ТОЛЬКО к US-локациям: для других стран разброс слишком велик. База по SWE, множитель — по роли. Обновлять по levels.fyi.",
+  "currency": "USD",
+  "period": "year",
+  "us_only": true,
+  "grade_base": { "Junior": 150000, "Middle": 210000, "Senior": 300000, "Lead": 420000 },
+  "role_mult": {
+    "Backend": 1.0, "Frontend": 1.0, "Fullstack": 1.0, "Mobile": 1.0, "DevOps": 1.05,
+    "Data/ML": 1.1, "Product": 1.05, "Management": 1.1, "Project": 0.9, "QA": 0.85,
+    "Аналитик": 0.9, "Design": 0.85, "Marketing": 0.75, "Sales": 0.9, "HR": 0.75, "Support": 0.65
+  },
+  "default_mult": 0.85,
+  "spread": 0.25
+}
