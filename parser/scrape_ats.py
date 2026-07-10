@@ -136,6 +136,54 @@ def _strip_html(s):
     return _html.unescape(re.sub(r"\s+", " ", s)).strip()
 
 
+# ── Зарплатная вилка из полного описания ─────────────────────────────────────
+# Многие US-вакансии (Greenhouse/Ashby/Lever) по законам о прозрачности зарплат
+# указывают вилку прямо в тексте: «$150,000 - $200,000», «$150K–$200K USD»,
+# «£80,000 to £100,000». Достаём её из ПОЛНОГО описания (не из обрезанного excerpt).
+_CUR_SYM = {"$": "USD", "€": "EUR", "£": "GBP"}
+# Диапазон из двух сумм: символ валюты + число (+ K/тыс) — тире/«to»/«–» — второе число.
+_COMP_RX = re.compile(
+    r"([$€£])\s?(\d[\d,]*(?:\.\d+)?)\s?([kK])?\s?(?:-|–|—|to|through)\s?[$€£]?\s?"
+    r"(\d[\d,]*(?:\.\d+)?)\s?([kK])?",
+    re.I,
+)
+_HOURLY_RX = re.compile(r"\b(?:per hour|/\s?hr|hourly|an hour|/\s?hour)\b", re.I)
+
+
+def _num(s, k):
+    try:
+        n = float(s.replace(",", ""))
+    except ValueError:
+        return None
+    if k:
+        n *= 1000
+    return n
+
+
+def parse_comp(desc):
+    """Возвращает (min, max, currency, period) годовой вилки или None.
+    Только явные диапазоны из двух сумм — чтобы не ловить «$10M raised» и подобное."""
+    text = _strip_html(desc)
+    if not text:
+        return None
+    for m in _COMP_RX.finditer(text):
+        cur = _CUR_SYM.get(m.group(1))
+        lo = _num(m.group(2), m.group(3))
+        hi = _num(m.group(4), m.group(5) or m.group(3))   # «$150K–$200K»: K может стоять раз
+        if lo is None or hi is None or hi < lo:
+            continue
+        tail = text[m.end():m.end() + 18]
+        period = "year"
+        if _HOURLY_RX.search(text[max(0, m.start() - 4):m.end() + 18]):
+            lo, hi, period = lo * 2080, hi * 2080, "year"   # почасовая → год (2080 ч)
+            if not (10_000 <= lo <= 5_000_000):
+                continue
+        elif not (10_000 <= lo <= 5_000_000 and hi <= 5_000_000):
+            continue
+        return int(lo), int(hi), cur, period
+    return None
+
+
 # ── HTTP ─────────────────────────────────────────────────────────────────────
 
 def _get_json(url, timeout=25):
@@ -159,7 +207,7 @@ def _iso(v):
 
 
 def _rec(company, slug, ats, ext_id, title, location, fmt, dept, url, posted, desc=""):
-    return {
+    rec = {
         "id": f"{ats}:{slug}:{ext_id}",
         "company": company,
         "company_slug": slug,
@@ -173,6 +221,12 @@ def _rec(company, slug, ats, ext_id, title, location, fmt, dept, url, posted, de
         "tags": tag_title(title),
         "excerpt": _strip_html(desc)[:280] or None,
     }
+    # Реальная зарплатная вилка из полного описания (если указана явно). Поля
+    # добавляем только когда нашли — чтобы не раздувать JSON нулями на 13k строк.
+    comp = parse_comp(desc)
+    if comp:
+        rec["salary_min"], rec["salary_max"], rec["salary_cur"], rec["salary_period"] = comp
+    return rec
 
 
 # ── Парсеры по ATS ───────────────────────────────────────────────────────────

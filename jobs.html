@@ -192,6 +192,9 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
 .tag{font-size:12px;font-weight:700;padding:4px 11px;border-radius:8px;background:var(--pill);color:var(--pill-ink)}
 .tag.tmore{color:#9095a5;background:transparent;padding-left:2px}
+/* Зарплата: реальная вилка — акцентная (зелёная), оценка — приглушённая с «≈». */
+.tag.sal{background:#e7f7ec;color:#137a3a;font-weight:800}
+.tag.sal.est{background:transparent;border:1px dashed #cfd3dc;color:#8a8f9e;font-weight:700}
 
 /* Страница вакансии: описание, источник, работодатель, теги и кнопка «Откликнуться» */
 /* Страница вакансии — фиксированный слой ПОД хедером (top:61px = высота хедера
@@ -217,6 +220,10 @@ body.noscroll{overflow:hidden}
 /* Описание на странице вакансии — тот же единый шрифт Manrope, что и в карточках. */
 .ddesc{font:400 16px/1.7 Georgia,'Times New Roman',serif;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere}
 .dtags{display:flex;gap:7px;flex-wrap:wrap}
+/* Зарплата на странице вакансии: реальная — акцентом, оценка — приглушённо с пометкой. */
+.dsal{display:inline-flex;align-items:baseline;gap:10px;font-size:20px;font-weight:800;color:#137a3a}
+.dsal.est{color:#6b6f7e;font-weight:700}
+.dsal-note{font-size:12px;font-weight:600;color:#9095a5}
 .dapply{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:28px;padding:16px;
   border-radius:14px;background:var(--yellow);color:#18181f;font:800 15px 'Manrope';cursor:pointer;transition:.15s}
 .dapply:hover{background:var(--yellow-h)}
@@ -433,10 +440,48 @@ function parseSalary(text){
   }
   return out;
 }
-// Диапазон вакансии пересекается с диапазоном-фильтром?
+// Диапазон вакансии пересекается с диапазоном-фильтром? Учитываем и реальную
+// вилку (_salIv), и оценку (_salEst) — чтобы по зарплате фильтровались и те
+// вакансии, где вилка не указана, но мы её оценили.
 function salMatch(p, label){
-  const b=SAL_BY[label]; if(!b || !p._salIv) return false;
-  return p._salIv.some(([lo,hi])=> lo<b.hi && hi>b.lo);
+  const b=SAL_BY[label]; if(!b) return false;
+  const ivs=(p._salIv&&p._salIv.length)?p._salIv:(p._salEst||null);
+  if(!ivs) return false;
+  return ivs.some(([lo,hi])=> lo<b.hi && hi>b.lo);
+}
+
+// ── Зарплата: реальная вилка и оценка ────────────────────────────────────────
+// Валюты приводим к ₽ по грубому курсу — для фильтра/бакетов (отображаем в
+// исходной валюте). Оценку берём из data/salary_bench.json, когда вилки нет.
+const CUR_RUB = {USD:90, EUR:100, GBP:115, RUB:1};
+const CUR_SYM = {USD:"$", EUR:"€", GBP:"£", RUB:"₽"};
+let SAL_BENCH = null;                                  // грузится в load()
+const _kShort = n => n>=1e6 ? (n/1e6).toFixed(1).replace(/\.0$/,"").replace(".",",")+"M" : Math.round(n/1000)+"k";
+// «150–200k ₽» (или одиночное «200k ₽»); для валют — «$150K–$200K».
+function fmtRub(lo,hi){ return (lo===hi?_kShort(lo):_kShort(lo)+"–"+_kShort(hi))+" ₽"; }
+function fmtCur(lo,hi,cur){
+  if(cur==="RUB"||!cur) return fmtRub(lo,hi);
+  const s=CUR_SYM[cur]||"", k=n=> n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,"")+"M":Math.round(n/1000)+"K";
+  return lo===hi ? s+k(lo) : s+k(lo)+"–"+s+k(hi);
+}
+// Оценка ₽/мес по грейду и роли (ровно один грейд и одна роль — иначе слишком
+// широко, не показываем). База — медианы Habr Career, множитель — по роли.
+function estimateSalary(p){
+  if(!SAL_BENCH) return null;
+  const tags=p.tags||[];
+  const grade=tags.find(t=>GRADE.has(t));
+  const roles=tags.filter(t=>G_ROLE.includes(t));
+  if(!grade || roles.length!==1) return null;
+  const base=SAL_BENCH.grade_base[grade]; if(!base) return null;
+  const mult=SAL_BENCH.role_mult[roles[0]] ?? SAL_BENCH.default_mult;
+  const mid=base*mult, sp=SAL_BENCH.spread, r=n=>Math.round(n/5000)*5000;
+  return [r(mid*(1-sp)), r(mid*(1+sp))];
+}
+// Что показать в карточке/на странице: реальная вилка или оценка (est:true).
+function salaryInfo(p){
+  if(p._salDisp)    return {text:p._salDisp,    est:false};
+  if(p._salEstDisp) return {text:p._salEstDisp, est:true};
+  return null;
 }
 
 // Известные компании → фирменный цвет кружка-логотипа. Внешние картинки грузить
@@ -593,6 +638,11 @@ function skillChips(skills){
   return shown.map(t=>`<span class="tag">${esc(t)}</span>`).join("")
     + (extra>0?`<span class="tag tmore">+${extra}</span>`:"");
 }
+// Пилюля зарплаты в зоне тегов: реальная вилка выделена, оценка — приглушённо с «≈».
+function salPill(p){
+  const s=salaryInfo(p); if(!s) return "";
+  return `<span class="tag sal${s.est?" est":""}">${esc(s.text)}</span>`;
+}
 
 // Эвристический разбор TG-поста: должность (первая содержательная строка) и
 // компания по паттернам «<роль> в <Компания>», «роль / Компания», «<Company> is a…».
@@ -676,7 +726,7 @@ function cardCo(j){
   const ats=ATS_NAME[j.ats]||j.ats||"";
   // Пилюли формата/грейда/локации теперь в нижней зоне тегов (единая зона — не
   // «скачут» и не двигают заголовок). Верхняя строка — только компания и время.
-  const tags=metaPills([j.location, j.work_format, ...grade])+skillChips(skills);
+  const tags=salPill(j)+metaPills([j.location, j.work_format, ...grade])+skillChips(skills);
   // Описание есть у всех карточек: короткое из ATS, иначе — отдел/локация.
   const excerpt=j.excerpt || [j.department, j.location].filter(Boolean).join(" · ") || "Открытая вакансия — подробности на career-сайте.";
   return `<div class="post" data-kind="co" data-id="${j._id}" data-link="${esc(j.apply_url)}">
@@ -705,7 +755,7 @@ function cardTg(p){
   // Аватар: у известной компании — фирменный логотип-бейдж, иначе — по каналу.
   const ava = badge(company||srcName, hueOf(company||p.username));
   // Пилюли формата/грейда — в нижней зоне тегов вместе со скиллами (единая зона).
-  const tags=metaPills([...fmt, ...grade])+skillChips(skills);
+  const tags=salPill(p)+metaPills([...fmt, ...grade])+skillChips(skills);
   // Описание есть у всех карточек: если пост без содержательного тела — подсказка.
   const exc=tgExcerpt(p.text, title) || "Подробности — на странице вакансии.";
   // Полный текст поста показываем на странице вакансии (клик по карточке).
@@ -831,6 +881,7 @@ function detailHtml(p){
       </div>
       <h1 class="dtitle">${esc(m.title)}</h1>
       ${m.meta?`<div class="dmeta">${m.meta}</div>`:""}
+      ${(()=>{const s=salaryInfo(p);return s?`<div class="dsec">Зарплата</div><div class="dsal${s.est?" est":""}">${esc(s.text)}${s.est?`<span class="dsal-note">оценка по рынку (грейд + роль), а не из вакансии</span>`:""}</div>`:"";})()}
       <div class="dsec">Описание</div>
       <div class="ddesc">${esc(m.desc)}</div>
       ${m.skills.length?`<div class="dsec">Метки</div><div class="dtags">${m.skills.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
@@ -887,6 +938,9 @@ function normTg(p){
   p._src="Telegram";
   p._search=((p.text||"")+" "+(p.channel_title||"")+" "+(p.username||"")).toLowerCase();
   p._salIv=parseSalary(p.text);              // зарплата разбирается из текста поста
+  // Показываем реальную вилку, только если распознан ровно один диапазон
+  // (у дайджестов их много — одну показывать нельзя, но для фильтра оставляем все).
+  if(p._salIv.length===1) p._salDisp=fmtRub(p._salIv[0][0], p._salIv[0][1]);
   return p;
 }
 function normCo(j){
@@ -894,7 +948,15 @@ function normCo(j){
   if(j.work_format) tags.push(j.work_format);   // формат работы — фильтруемым тегом
   j.tags=tags; j._src="Компании";
   j._search=((j.title||"")+" "+(j.company||"")+" "+(j.location||"")).toLowerCase();
-  j._salIv=[];                                // у ATS-вакансий нет поля зарплаты
+  // Реальная вилка из ATS-описания (scrape_ats.py): для фильтра приводим к ₽,
+  // отображаем в исходной валюте ($150K–$200K).
+  if(j.salary_min!=null){
+    const cur=j.salary_cur||"USD", k=CUR_RUB[cur]||1;
+    j._salIv=[[j.salary_min*k, j.salary_max*k]];
+    j._salDisp=fmtCur(j.salary_min, j.salary_max, cur);
+  } else {
+    j._salIv=[];                              // вилка не указана — оценка не по RU-рынку, пропускаем
+  }
   return j;
 }
 function sortData(){
@@ -906,11 +968,21 @@ function sortData(){
 async function load(){
   const state=document.getElementById("state");
   const grab=async(url)=>{ const r=await fetch(url,{cache:"no-cache"}); return r.ok?r.json():[]; };
+  const grabObj=async(url)=>{ try{ const r=await fetch(url,{cache:"no-cache"}); return r.ok?r.json():null; }catch{ return null; } };
   try{
-    const [tg, co]=await Promise.all([grab("data/job_feed.json"), grab("data/company_jobs.json")]);
+    const [tg, co, bench]=await Promise.all([
+      grab("data/job_feed.json"), grab("data/company_jobs.json"), grabObj("data/salary_bench.json")]);
+    SAL_BENCH=bench;                                     // таблица оценки (может отсутствовать)
     data=tg.filter(looksLikeVacancy).map(normTg).concat(co.map(normCo));
+    // Оценка зарплаты там, где реальной вилки нет (только RU/TG — бенчмарк по RU-рынку).
+    data.forEach(p=>{
+      if(p._salIv&&p._salIv.length) return;
+      if(p._src!=="Telegram") return;
+      const est=estimateSalary(p);
+      if(est){ p._salEst=[est]; p._salEstDisp="≈ "+fmtRub(est[0],est[1]); }
+    });
     data.forEach((p,i)=>{ p._id=i; byId.set(i,p); });   // стабильный id для страницы вакансии
-    // счётчики диапазонов зарплат — один раз по загруженным данным
+    // счётчики диапазонов зарплат — один раз по загруженным данным (реальные + оценка)
     SAL_COUNTS=SAL_BUCKETS.map(b=>data.reduce((c,p)=>c+(salMatch(p,b.label)?1:0),0));
     sortData();
     renderFilters(); renderFeed();
