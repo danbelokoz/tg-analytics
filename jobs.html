@@ -185,7 +185,10 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .ptitle{display:inline-block;margin-top:13px;font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
 .post:hover .ptitle{color:#1573c4}
 /* Описание вакансии — единый шрифт для обоих источников (карточки компаний и TG). */
-.pexc{margin-top:8px;color:var(--muted);font:400 13.5px/1.5 'Manrope'}
+/* Описание — отдельный шрифт (системный serif), чтобы читалось как редакторская
+   выжимка, а не как текст, скопированный из Telegram. Serif системный — без
+   внешней загрузки (доступность в РФ, см. PROJECT.md). */
+.pexc{margin-top:8px;color:#5b5f6e;font:400 14px/1.55 Georgia,'Times New Roman',serif}
 .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
 .tag{font-size:12px;font-weight:700;padding:4px 11px;border-radius:8px;background:var(--pill);color:var(--pill-ink)}
 .tag.tmore{color:#9095a5;background:transparent;padding-left:2px}
@@ -224,7 +227,7 @@ body.noscroll{overflow:hidden}
 .dmeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
 .dsec{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9095a5;margin:24px 0 10px}
 /* Описание на странице вакансии — тот же единый шрифт Manrope, что и в карточках. */
-.ddesc{font:400 15px/1.65 'Manrope';color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere}
+.ddesc{font:400 16px/1.7 Georgia,'Times New Roman',serif;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere}
 .dtags{display:flex;gap:7px;flex-wrap:wrap}
 .dapply{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:28px;padding:16px;
   border-radius:14px;background:var(--yellow);color:#18181f;font:800 15px 'Manrope';cursor:pointer;transition:.15s}
@@ -657,6 +660,12 @@ function firstLine(text){
   }
   return "";
 }
+// Убираем эмодзи и декоративные символы (💙 📍 💎 ◆ → …), чтобы описание
+// читалось как аккуратная выжимка, а не как пост, скопированный из Telegram.
+const stripEmoji = s => String(s||"")
+  .replace(/[\p{Extended_Pictographic}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{2B00}-\u{2BFF}\u{25A0}-\u{25FF}\uFE0F\u200D\u20E3]/gu," ")
+  .replace(/\s{2,}/g," ").trim();
+
 // Краткое описание для карточки: текст поста без промо, строки-заголовка и
 // хэштегов, схлопнутый в одну строку — чтобы карточки TG и компаний выглядели
 // одинаково (единый шрифт .pexc). Полный текст показываем на странице вакансии.
@@ -668,7 +677,9 @@ function tgExcerpt(text, title){
     if(s.startsWith("#") && s.split(/\s+/).length<=6) return false;
     return true;
   });
-  return (body.join(" ")||t).replace(/\s+/g," ").trim().slice(0,200);
+  return stripEmoji(body.join(" ")||t)
+    .replace(/^[^\p{L}\p{N}«"(]+/u,"")   // убрать ведущую пунктуацию/пробелы после чистки
+    .slice(0,200);
 }
 
 // Карточка вакансии с career-сайта компании (данные из публичного API её ATS).
