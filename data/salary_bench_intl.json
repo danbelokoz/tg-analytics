@@ -1,18 +1,18 @@
 {
-  "_note": "Оценка total comp (base+stock+bonus), $/год, для вакансий с career-сайтов компаний на рынке США. Ориентир — агрегаты levels.fyi для средне-крупного tech (ниже FAANG-топа) = базовый тир B. ПРИМЕНЯТЬ ТОЛЬКО к US-локациям: для других стран разброс слишком велик. База по SWE, множитель — по роли, затем по тиру компании. Обновлять по levels.fyi.",
+  "_note": "Оценка ГОДОВОГО ОКЛАДА (base salary, без акций/бонусов), $/год, для вакансий с career-сайтов на рынке США. Ориентир — база по рынку US-tech (base ≈ 55–70% от total comp levels.fyi). ПРИМЕНЯТЬ ТОЛЬКО к US-локациям: для других стран разброс слишком велик. База по SWE, множитель — по роли, затем по тиру компании. Показываем оклад (а не total comp), чтобы число читалось как зарплата, а не завышало ожидания.",
   "currency": "USD",
   "period": "year",
   "us_only": true,
-  "grade_base": { "Junior": 150000, "Middle": 210000, "Senior": 300000, "Lead": 420000 },
+  "grade_base": { "Junior": 120000, "Middle": 150000, "Senior": 190000, "Lead": 235000 },
   "role_mult": {
     "Backend": 1.0, "Frontend": 1.0, "Fullstack": 1.0, "Mobile": 1.0, "DevOps": 1.05,
-    "Data/ML": 1.1, "Product": 1.05, "Management": 1.1, "Project": 0.9, "QA": 0.85,
-    "Аналитик": 0.9, "Design": 0.85, "Marketing": 0.75, "Sales": 0.9, "HR": 0.75, "Support": 0.65
+    "Data/ML": 1.1, "Product": 1.0, "Management": 1.05, "Project": 0.9, "QA": 0.85,
+    "Аналитик": 0.9, "Design": 0.85, "Marketing": 0.8, "Sales": 0.85, "HR": 0.75, "Support": 0.7
   },
   "default_mult": 0.85,
-  "spread": 0.25,
-  "_tier_note": "Множитель по работодателю: A — топ-плательщики (frontier AI / FAANG-уровень), B — базовый средне-крупный tech (по умолчанию), C — space/hardware/gamedev/EU-remote, где TC обычно ниже US-tech-медианы. Ключ — нормализованное имя компании (lowercase, только буквы/цифры). Список приблизительный и настраиваемый.",
-  "tier_mult": { "A": 1.35, "B": 1.0, "C": 0.78 },
+  "spread": 0.2,
+  "_tier_note": "Множитель по работодателю (для оклада разброс меньше, чем для total comp — акции у топов выше, а оклад отличается умереннее): A — топ-плательщики (frontier AI / FAANG-уровень), B — базовый средне-крупный tech (по умолчанию), C — space/hardware/gamedev/EU-remote. Ключ — нормализованное имя компании. Список приблизительный и настраиваемый.",
+  "tier_mult": { "A": 1.25, "B": 1.0, "C": 0.82 },
   "default_tier": "B",
   "company_tier": {
     "openai": "A", "anthropic": "A", "xai": "A", "thinkingmachineslab": "A",

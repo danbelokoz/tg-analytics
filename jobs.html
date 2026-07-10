@@ -895,7 +895,7 @@ function detailHtml(p){
       </div>
       <h1 class="dtitle">${esc(m.title)}</h1>
       ${m.meta?`<div class="dmeta">${m.meta}</div>`:""}
-      ${(()=>{const s=salaryInfo(p);if(!s)return"";const note=s.intl?"оценка, рынок США (levels.fyi), total comp/год — не из вакансии":"оценка по рынку (грейд + роль), а не из вакансии";return `<div class="dsec">Зарплата</div><div class="dsal${s.est?" est":""}">${esc(s.text)}${s.est?`<span class="dsal-note">${note}</span>`:""}</div>`;})()}
+      ${(()=>{const s=salaryInfo(p);if(!s)return"";const note=s.intl?"оценка оклада, рынок США (грейд + роль + тир компании) — не из вакансии":"оценка по рынку (грейд + роль), а не из вакансии";return `<div class="dsec">Зарплата</div><div class="dsal${s.est?" est":""}">${esc(s.text)}${s.est?`<span class="dsal-note">${note}</span>`:""}</div>`;})()}
       <div class="dsec">Описание</div>
       <div class="ddesc">${esc(m.desc)}</div>
       ${m.skills.length?`<div class="dsec">Метки</div><div class="dtags">${m.skills.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
