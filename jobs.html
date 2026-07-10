@@ -461,12 +461,15 @@ const _kShort = n => n>=1e6 ? (n/1e6).toFixed(1).replace(/\.0$/,"").replace(".",
 // странах разброс total comp слишком велик (см. salary_bench_intl.json).
 const US_RX=/\b(United States|USA|U\.S\.|US[-\s]|,\s?(?:CA|NY|WA|TX|MA|IL|CO|GA|FL|OR|VA|NC|PA|NJ|DC)\b|New York|San Francisco|Seattle|Austin|Boston|Los Angeles|Chicago|Denver|Atlanta|Mountain View|Menlo Park|Palo Alto|Sunnyvale|Bay Area|Remote[,\s-]+US)\b/i;
 const isUS = loc => !!loc && US_RX.test(loc);
-// «150–200k ₽» (или одиночное «200k ₽»); для валют — «$150K–$200K».
-function fmtRub(lo,hi){ return (lo===hi?_kShort(lo):_kShort(lo)+"–"+_kShort(hi))+" ₽"; }
+// Все суммы на сайте — В МЕСЯЦ (и ₽, и валюты), поэтому суффикс «/мес» вшит.
+// «150–200k ₽/мес» (или одиночное «200k ₽/мес»); для валют — «$16K–$24K/мес».
+function fmtRub(lo,hi){ return (lo===hi?_kShort(lo):_kShort(lo)+"–"+_kShort(hi))+" ₽/мес"; }
 function fmtCur(lo,hi,cur){
   if(cur==="RUB"||!cur) return fmtRub(lo,hi);
-  const s=CUR_SYM[cur]||"", k=n=> n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,"")+"M":Math.round(n/1000)+"K";
-  return lo===hi ? s+k(lo) : s+k(lo)+"–"+s+k(hi);
+  // K с одним знаком для «мелких» месячных сумм (<100k), иначе округляем.
+  const s=CUR_SYM[cur]||"", k=n=> n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,"")+"M"
+    : n>=1e5?Math.round(n/1000)+"K":(n/1e3).toFixed(1).replace(/\.0$/,"")+"K";
+  return (lo===hi ? s+k(lo) : s+k(lo)+"–"+s+k(hi))+"/мес";
 }
 // Оценка вилки по бенчмарку: нужен ровно один грейд и одна роль (иначе слишком
 // широко). База × множитель роли ± spread. Возвращает [lo,hi] в валюте бенчмарка.
@@ -482,14 +485,18 @@ function benchEstimate(tags, bench, round, factor){
 }
 // RU/TG: оценка ₽/мес (Habr Career).
 function estimateSalary(p){ return benchEstimate(p.tags, SAL_BENCH, 5000); }
-// ATS/US: оценка $/год (levels.fyi). Только для US-локаций; масштаб по тиру
-// работодателя (A — топ-плательщики, C — space/hardware/gamedev; по умолч. B).
+// ATS/US: оценка оклада (levels.fyi), в МЕСЯЦ ($/мес). Только для US-локаций;
+// масштаб по тиру работодателя (A — топ, C — space/hardware/gamedev; по умолч. B).
+// Бенчмарк задан годовым окладом → делим на 12.
 function estimateIntl(j){
   const B=SAL_BENCH_INTL;
   if(!B || !isUS(j.location)) return null;
   const tier=(B.company_tier||{})[norm(j.company)] || B.default_tier || "B";
   const factor=(B.tier_mult||{})[tier] ?? 1;
-  return benchEstimate(j.tags, B, 5000, factor);
+  const y=benchEstimate(j.tags, B, 5000, factor);
+  if(!y) return null;
+  const mo=n=>Math.round(n/12/500)*500;                 // год → мес, округление до $500
+  return [mo(y[0]), mo(y[1])];
 }
 // Что показать в карточке/на странице: реальная вилка или оценка (est:true).
 function salaryInfo(p){
@@ -962,12 +969,12 @@ function normCo(j){
   if(j.work_format) tags.push(j.work_format);   // формат работы — фильтруемым тегом
   j.tags=tags; j._src="Компании";
   j._search=((j.title||"")+" "+(j.company||"")+" "+(j.location||"")).toLowerCase();
-  // Реальная вилка из ATS-описания (scrape_ats.py): для фильтра приводим к ₽,
-  // отображаем в исходной валюте ($150K–$200K).
+  // Реальная вилка из ATS-описания (scrape_ats.py) указана ГОДОВОЙ → приводим к
+  // месяцу (÷12), как и всё на сайте. Для фильтра — в ₽/мес, показываем в валюте.
   if(j.salary_min!=null){
-    const cur=j.salary_cur||"USD", k=CUR_RUB[cur]||1;
-    j._salIv=[[j.salary_min*k, j.salary_max*k]];
-    j._salDisp=fmtCur(j.salary_min, j.salary_max, cur);
+    const cur=j.salary_cur||"USD", k=CUR_RUB[cur]||1, moLo=j.salary_min/12, moHi=j.salary_max/12;
+    j._salIv=[[moLo*k, moHi*k]];
+    j._salDisp=fmtCur(moLo, moHi, cur);
   } else {
     j._salIv=[];                              // вилка не указана — оценка не по RU-рынку, пропускаем
   }
