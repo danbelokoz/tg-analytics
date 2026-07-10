@@ -1,5 +1,5 @@
 {
-  "_note": "Оценка total comp (base+stock+bonus), $/год, для вакансий с career-сайтов компаний на рынке США. Ориентир — агрегаты levels.fyi для средне-крупного tech (ниже FAANG-топа). ПРИМЕНЯТЬ ТОЛЬКО к US-локациям: для других стран разброс слишком велик. База по SWE, множитель — по роли. Обновлять по levels.fyi.",
+  "_note": "Оценка total comp (base+stock+bonus), $/год, для вакансий с career-сайтов компаний на рынке США. Ориентир — агрегаты levels.fyi для средне-крупного tech (ниже FAANG-топа) = базовый тир B. ПРИМЕНЯТЬ ТОЛЬКО к US-локациям: для других стран разброс слишком велик. База по SWE, множитель — по роли, затем по тиру компании. Обновлять по levels.fyi.",
   "currency": "USD",
   "period": "year",
   "us_only": true,
@@ -10,5 +10,19 @@
     "Аналитик": 0.9, "Design": 0.85, "Marketing": 0.75, "Sales": 0.9, "HR": 0.75, "Support": 0.65
   },
   "default_mult": 0.85,
-  "spread": 0.25
+  "spread": 0.25,
+  "_tier_note": "Множитель по работодателю: A — топ-плательщики (frontier AI / FAANG-уровень), B — базовый средне-крупный tech (по умолчанию), C — space/hardware/gamedev/EU-remote, где TC обычно ниже US-tech-медианы. Ключ — нормализованное имя компании (lowercase, только буквы/цифры). Список приблизительный и настраиваемый.",
+  "tier_mult": { "A": 1.35, "B": 1.0, "C": 0.78 },
+  "default_tier": "B",
+  "company_tier": {
+    "openai": "A", "anthropic": "A", "xai": "A", "thinkingmachineslab": "A",
+    "databricks": "A", "stripe": "A", "snowflake": "A", "figma": "A", "airbnb": "A",
+    "coinbase": "A", "scaleai": "A", "cursor": "A", "cognition": "A", "perplexity": "A",
+    "datadog": "A", "roblox": "A", "ramp": "A", "robinhood": "A", "wiz": "A", "harvey": "A",
+    "google": "A", "meta": "A", "nvidia": "A", "netflix": "A", "apple": "A", "amazon": "A", "microsoft": "A",
+    "spacex": "C", "saronic": "C", "k2space": "C", "theexplorationcompany": "C",
+    "tenstorrent": "C", "verkor": "C", "zoox": "C", "larianstudios": "C",
+    "rockstargames": "C", "cdprojektred": "C", "riotgames": "C", "razer": "C",
+    "canonical": "C", "proton": "C"
+  }
 }

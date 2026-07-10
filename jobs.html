@@ -470,22 +470,26 @@ function fmtCur(lo,hi,cur){
 }
 // Оценка вилки по бенчмарку: нужен ровно один грейд и одна роль (иначе слишком
 // широко). База × множитель роли ± spread. Возвращает [lo,hi] в валюте бенчмарка.
-function benchEstimate(tags, bench, round){
+function benchEstimate(tags, bench, round, factor){
   if(!bench) return null;
   const grade=(tags||[]).find(t=>GRADE.has(t));
   const roles=(tags||[]).filter(t=>G_ROLE.includes(t));
   if(!grade || roles.length!==1) return null;
   const base=bench.grade_base[grade]; if(!base) return null;
   const mult=bench.role_mult[roles[0]] ?? bench.default_mult;
-  const mid=base*mult, sp=bench.spread, r=round||5000;
+  const mid=base*mult*(factor||1), sp=bench.spread, r=round||5000;
   return [Math.round(mid*(1-sp)/r)*r, Math.round(mid*(1+sp)/r)*r];
 }
 // RU/TG: оценка ₽/мес (Habr Career).
 function estimateSalary(p){ return benchEstimate(p.tags, SAL_BENCH, 5000); }
-// ATS/US: оценка $/год (levels.fyi). Только для US-локаций.
+// ATS/US: оценка $/год (levels.fyi). Только для US-локаций; масштаб по тиру
+// работодателя (A — топ-плательщики, C — space/hardware/gamedev; по умолч. B).
 function estimateIntl(j){
-  if(!isUS(j.location)) return null;
-  return benchEstimate(j.tags, SAL_BENCH_INTL, 5000);
+  const B=SAL_BENCH_INTL;
+  if(!B || !isUS(j.location)) return null;
+  const tier=(B.company_tier||{})[norm(j.company)] || B.default_tier || "B";
+  const factor=(B.tier_mult||{})[tier] ?? 1;
+  return benchEstimate(j.tags, B, 5000, factor);
 }
 // Что показать в карточке/на странице: реальная вилка или оценка (est:true).
 function salaryInfo(p){
