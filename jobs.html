@@ -153,16 +153,19 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .salchip.on .n{color:#93801d}
 
 /* Feed + card */
-.feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+/* align-items:start — карточки НЕ растягиваются на высоту ряда, а берут высоту
+   по своему содержимому. Иначе (stretch) при раскрытии одной карточки «глазом»
+   весь ряд тянется по ней и соседние карточки тоже вырастают. Так растёт только
+   раскрытая вакансия, соседи остаются как есть. */
+.feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
 @media(max-width:1240px){.feed{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.feed{grid-template-columns:1fr}}
 .post{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
   box-shadow:0 1px 2px rgba(24,24,31,.03);transition:box-shadow .15s,border-color .15s}
-/* Одинаковый размер карточек: тянем по высоте ряда. Зоны фиксированы —
-   заголовок в 2 строки, описание в 2 строки, теги+кнопки прижаты к низу, —
-   поэтому названия и описания всех карточек выровнены, а теги не «скачут». */
-.feed:not(.rows) .post{display:flex;flex-direction:column;height:100%;min-height:186px}
-.feed:not(.rows) .post .tags{margin-top:auto}
+/* Зоны фиксированы по min-height (заголовок 2 строки, описание 2 строки), поэтому
+   заголовки и описания всех карточек выровнены, а теги начинаются на одном уровне
+   даже без растяжения по высоте ряда. */
+.feed:not(.rows) .post{display:flex;flex-direction:column;min-height:186px}
 .post{cursor:pointer}
 .feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
 .feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
@@ -199,10 +202,17 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 /* Кнопка-«глаз» в правом верхнем углу карточки (рядом со временем, как значок
    просмотров в Telegram): раскрывает полное описание вакансии прямо в карточке,
    без ухода на отдельную страницу. Только иконка — не съедает ширину заголовка. */
-.eye{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;
+.eye{position:relative;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;
   border:1px solid var(--line);border-radius:8px;background:var(--card);color:#9095a5;cursor:pointer;transition:.13s}
 .eye svg{width:16px;height:16px}
 .eye:hover{border-color:#cfe0f4;color:#1573c4;background:#f4f8fd}
+/* Подсказка «Предпросмотр» при наведении на «глаз» — мгновенная (не ждём ~1с
+   как у нативного title). Появляется над кнопкой, у правого края карточки. */
+.eye::after{content:"Предпросмотр";position:absolute;bottom:calc(100% + 7px);right:0;
+  padding:5px 9px;border-radius:8px;background:#18181f;color:#fff;font:700 11.5px 'Manrope';
+  white-space:nowrap;opacity:0;pointer-events:none;transform:translateY(3px);
+  transition:opacity .13s,transform .13s;z-index:6;box-shadow:0 6px 18px rgba(24,24,31,.22)}
+.eye:hover::after{opacity:1;transform:translateY(0)}
 .post.expanded .eye{color:#1573c4;border-color:#cfe0f4;background:#f0f6fe}
 .pfull{display:none;margin-top:8px;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere;
   font:400 14px/1.6 Georgia,'Times New Roman',serif}
@@ -396,7 +406,7 @@ const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%3
 const LINKOUT = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 // Кнопка «глаз» — предпросмотр: раскрывает полное описание прямо в карточке.
 // Только иконка (как значок просмотров в Telegram), в правом верхнем углу карточки.
-const EYE = '<button class="eye" type="button" aria-expanded="false" aria-label="Предпросмотр" title="Предпросмотр">'
+const EYE = '<button class="eye" type="button" aria-expanded="false" aria-label="Предпросмотр">'
   + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>';
 
 // Промо-подписи каналов («При отклике укажите, что нашли вакансию на …»,
