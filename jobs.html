@@ -196,6 +196,21 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .tag.sal{background:#e7f7ec;color:#137a3a;font-weight:800}
 .tag.sal.est{background:transparent;border:1px dashed #cfd3dc;color:#8a8f9e;font-weight:700}
 
+/* Кнопка-«глаз» в правом верхнем углу карточки (рядом со временем, как значок
+   просмотров в Telegram): раскрывает полное описание вакансии прямо в карточке,
+   без ухода на отдельную страницу. Только иконка — не съедает ширину заголовка. */
+.eye{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;
+  border:1px solid var(--line);border-radius:8px;background:var(--card);color:#9095a5;cursor:pointer;transition:.13s}
+.eye svg{width:16px;height:16px}
+.eye:hover{border-color:#cfe0f4;color:#1573c4;background:#f4f8fd}
+.post.expanded .eye{color:#1573c4;border-color:#cfe0f4;background:#f0f6fe}
+.pfull{display:none;margin-top:8px;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere;
+  font:400 14px/1.6 Georgia,'Times New Roman',serif}
+.feed:not(.rows) .post.expanded{height:auto}
+.post.expanded .pexc{display:none}
+.post.expanded .pfull{display:block}
+.feed.rows .eye,.feed.rows .pfull{display:none}
+
 /* Страница вакансии: описание, источник, работодатель, теги и кнопка «Откликнуться» */
 /* Страница вакансии — фиксированный слой ПОД хедером (top:61px = высота хедера
    с бордером), z-index ниже хедера, чтобы навигация оставалась видимой. */
@@ -360,7 +375,7 @@ const GROUPS = [
   ["Грейд", G_GRADE], ["Занятость", G_EMPLOY], ["Прочее", G_OTHER],
 ];
 const SRC = new Set(G_SRC), FMT = new Set(G_FMT), GRADE = new Set(G_GRADE);
-const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable", workday:"Workday"};
+const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable", workday:"Workday", yandex:"yandex.ru/jobs"};
 
 let data = [], active = new Set(), sortNewest = true;
 // Вид ленты: карточки-блоки (по умолчанию) или компактный список строк. Запоминаем в браузере.
@@ -379,6 +394,10 @@ const esc = s => String(s??"")
 const compact = n => n==null ? "" : Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(n).replace(".",",");
 const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%360; return h; };
 const LINKOUT = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+// Кнопка «глаз» — предпросмотр: раскрывает полное описание прямо в карточке.
+// Только иконка (как значок просмотров в Telegram), в правом верхнем углу карточки.
+const EYE = '<button class="eye" type="button" aria-expanded="false" aria-label="Предпросмотр" title="Предпросмотр">'
+  + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>';
 
 // Промо-подписи каналов («При отклике укажите, что нашли вакансию на …»,
 // «Подписывайтесь…», «Канал не участвует в найме…» и т.п.) — это не часть
@@ -753,10 +772,11 @@ function cardCo(j){
   return `<div class="post" data-kind="co" data-id="${j._id}" data-link="${esc(j.apply_url)}">
     <div class="ptop">${avatarCo(j)}
       <span class="src-name">${esc(j.company)}</span>
-      <span class="ptime">${timeAgo(j.posted_at)} · ${esc(ats)}</span>
+      <span class="ptime">${timeAgo(j.posted_at)} · ${esc(ats)}</span>${EYE}
     </div>
     <div class="ptitle">${esc(j.title)}</div>
     <div class="pexc">${esc(excerpt)}</div>
+    <div class="pfull">${esc(excerpt)}</div>
     ${tags?`<div class="tags">${tags}</div>`:""}
   </div>`;
 }
@@ -779,14 +799,16 @@ function cardTg(p){
   const tags=salPill(p)+metaPills([...fmt, ...grade])+skillChips(skills);
   // Описание есть у всех карточек: если пост без содержательного тела — подсказка.
   const exc=tgExcerpt(p.text, title) || "Подробности — на странице вакансии.";
-  // Полный текст поста показываем на странице вакансии (клик по карточке).
+  // Полное описание раскрывается по «глазу»-предпросмотру прямо в карточке.
+  const full=stripPromo(p.text)||exc;
   return `<div class="post" data-kind="tg" data-id="${p._id}" data-link="${esc(p.link)}">
     <div class="ptop">${ava}
       <span class="src-name">${esc(srcName)}</span>
-      <span class="ptime">${timeAgo(p.posted_at)}</span>
+      <span class="ptime">${timeAgo(p.posted_at)}</span>${EYE}
     </div>
     <div class="ptitle">${esc(title)}</div>
     <div class="pexc">${esc(exc)}</div>
+    <div class="pfull">${esc(full)}</div>
     ${tags?`<div class="tags">${tags}</div>`:""}
   </div>`;
 }
@@ -852,11 +874,21 @@ new IntersectionObserver((es)=>{
   if(es[0].isIntersecting && shown < filtered.length) appendBatch();
 },{rootMargin:"600px"}).observe(document.getElementById("sentinel"));
 
-// Клик по карточке открывает страницу вакансии (описание, источник, работодатель,
-// теги и кнопка «Откликнуться»). Маршрут через hash — чтобы работал браузерный «Назад».
+// Клик по карточке открывает страницу вакансии В НОВОЙ ВКЛАДКЕ (описание,
+// источник, работодатель, теги и кнопка «Откликнуться»). Страница — тот же
+// jobs.html с hash-маршрутом #job=<id>: routeDetail() при загрузке новой вкладки
+// сразу отрисует детальную страницу поверх ленты. «Глаз» справа — быстрый
+// предпросмотр полного описания прямо в карточке, без ухода на новую страницу.
 document.getElementById("feed").addEventListener("click", e=>{
+  const eye=e.target.closest(".eye");
+  if(eye){                                          // «глаз»-предпросмотр раскрывает полное описание в карточке
+    const post=eye.closest(".post");
+    const open=post.classList.toggle("expanded");
+    eye.setAttribute("aria-expanded", open);
+    return;                                          // не открываем страницу — только разворачиваем
+  }
   const post=e.target.closest(".post[data-id]");
-  if(post) openDetail(post.dataset.id);            // клик по карточке открывает страницу вакансии
+  if(post) window.open("jobs.html#job="+post.dataset.id, "_blank", "noopener"); // новая вкладка со страницей вакансии
 });
 
 // ——— Страница вакансии ———
@@ -910,7 +942,6 @@ function detailHtml(p){
     </article>
   </div>`;
 }
-function openDetail(id){ if(location.hash!=="#job="+id) location.hash="job="+id; }
 function closeDetail(){
   const d=document.getElementById("detail");
   d.classList.remove("open"); d.innerHTML=""; document.body.classList.remove("noscroll");
