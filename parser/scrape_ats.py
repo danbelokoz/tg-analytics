@@ -132,8 +132,17 @@ def work_format(location, flag=None):
 def _strip_html(s):
     if not s:
         return ""
+    # Часть ATS (Greenhouse) отдаёт описание HTML-ЭКРАНИРОВАННЫМ, иногда дважды:
+    # «&lt;div class="content-intro"&gt;&lt;p&gt;…». Сначала декодируем сущности
+    # (до стабилизации — снимаем возможное двойное экранирование), и только потом
+    # вырезаем сами теги. Иначе unescape «проявляет» теги уже ПОСЛЕ их вырезания,
+    # и они попадают в excerpt как текст («<div class="content-intro"><p>…»).
+    prev = None
+    while s != prev:
+        prev = s
+        s = _html.unescape(s)
     s = re.sub(r"<[^>]+>", " ", s)
-    return _html.unescape(re.sub(r"\s+", " ", s)).strip()
+    return re.sub(r"\s+", " ", s).strip()
 
 
 # ── Зарплатная вилка из полного описания ─────────────────────────────────────
@@ -359,6 +368,69 @@ def fetch_workable(c):
     return out
 
 
+# ── Яндекс (свой career-сайт, публичный API «publications») ───────────────────
+# Не ATS в привычном смысле, а собственный публичный job-board API Яндекса
+# (yandex.ru/jobs/api/publications — тот же, что дёргает их фронт). Отдаёт JSON,
+# постранично по 20 с курсором; список без даты и полного текста, поэтому дату и
+# описание берём из детального эндпоинта /publications/{id} (параллельно).
+# РФ-доступность: сбор в CI, браузер грузит только наш data/company_jobs.json.
+_YA_LIST = "https://yandex.ru/jobs/api/publications"
+_YA_WMODE = {"remote": "remote", "mixed": "hybrid", "office": "onsite"}
+
+
+def _ya_cursor(next_url):
+    """Курсор следующей страницы из поля next (оно указывает на внутренний хост —
+    берём только параметр cursor и ходим на публичный yandex.ru)."""
+    if not next_url:
+        return None
+    from urllib.parse import urlparse, parse_qs
+    cur = parse_qs(urlparse(next_url).query).get("cursor")
+    return cur[0] if cur else None
+
+
+def _ya_detail(pub_id):
+    """Дата публикации + полное описание из детального эндпоинта."""
+    try:
+        d = _get_json(f"{_YA_LIST}/{pub_id}")
+    except Exception:  # noqa: BLE001 — вакансия без даты/описания не должна ронять сбор
+        return None, ""
+    return d.get("published_at") or d.get("modified"), d.get("description", "")
+
+
+def fetch_yandex(c):
+    # 1) собираем список публикаций (лёгкий, без текста), пока есть курсор
+    pubs, cursor = [], None
+    while len(pubs) < MAX_PER_COMPANY:
+        url = f"{_YA_LIST}?page_size=20" + (f"&cursor={cursor}" if cursor else "")
+        d = _get_json(url)
+        pubs += d.get("results", [])
+        cursor = _ya_cursor(d.get("next"))
+        if not cursor:
+            break
+    pubs = pubs[:MAX_PER_COMPANY]
+
+    # 2) дата и полное описание — из детального эндпоинта, параллельно
+    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+        details = list(ex.map(lambda p: _ya_detail(p["id"]), pubs))
+
+    out = []
+    for p, (posted, desc) in zip(pubs, details):
+        v = p.get("vacancy") or {}
+        loc = ", ".join(x["name"] for x in v.get("cities", []) if x.get("name")) or None
+        modes = v.get("work_modes") or []
+        flag = _YA_WMODE.get((modes[0].get("slug") if modes else None) or "")
+        dept = (p.get("public_service") or {}).get("name")
+        slug = p.get("publication_slug_url")
+        rec = _rec(c["name"], c["slug"], "yandex", p.get("id"),
+                   (p.get("title") or "").strip(), loc, work_format(loc, flag), dept,
+                   f"https://yandex.ru/jobs/vacancies/{slug}", posted, desc)
+        # short_summary — уже чистая выжимка в 1–2 предложения, лучше обрезанного HTML
+        if p.get("short_summary"):
+            rec["excerpt"] = p["short_summary"].strip()[:280]
+        out.append(rec)
+    return out
+
+
 FETCH = {
     "greenhouse": fetch_greenhouse,
     "lever": fetch_lever,
@@ -366,6 +438,7 @@ FETCH = {
     "smartrecruiters": fetch_smartrecruiters,
     "workable": fetch_workable,
     "workday": fetch_workday,
+    "yandex": fetch_yandex,
 }
 
 
@@ -380,17 +453,22 @@ def scrape_company(c):
 
 
 def main():
+    import status
     companies = json.load(open(SEED, encoding="utf-8"))
     print(f"Компаний в seed: {len(companies)} (concurrency={CONCURRENCY})")
     all_jobs, ok, fail = [], 0, 0
+    failed_names, empty_names = [], []  # для health-check и админ-дешборда
     with cf.ThreadPoolExecutor(max_workers=CONCURRENCY) as ex:
         for i, (c, jobs, err) in enumerate(ex.map(scrape_company, companies), 1):
             if err:
                 fail += 1
+                failed_names.append(f"{c['name']}: {err[:80]}")
                 print(f"[{i}/{len(companies)}] {c['name']}: {err}", file=sys.stderr)
                 continue
             ok += 1
             all_jobs += jobs
+            if not jobs:
+                empty_names.append(c["name"])
             print(f"[{i}/{len(companies)}] {c['name']} ({c['ats']}): {len(jobs)}")
 
     # свежие сверху; вакансии без даты — в конец
@@ -399,6 +477,10 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(all_jobs, f, ensure_ascii=False, separators=(",", ":"))
     print(f"Готово: {ok} компаний ок, {fail} с ошибкой, {len(all_jobs)} вакансий → {OUT}")
+
+    # Статус прогона → админ-дешборд (health-check внутри: резкое падение total = ok:false)
+    status.record("sites", total=len(all_jobs), failed=fail, prev=status.prev_total("sites"),
+                  meta={"companies_ok": ok, "failed": failed_names[:50], "empty": empty_names[:50]})
 
 
 if __name__ == "__main__":
