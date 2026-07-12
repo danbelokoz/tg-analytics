@@ -187,11 +187,9 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .ptime .v{display:inline-flex;align-items:center;gap:4px}
 .ptitle{display:inline-block;margin-top:13px;font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
 .post:hover .ptitle{color:#1573c4}
-/* Описание вакансии — единый шрифт для обоих источников (карточки компаний и TG). */
-/* Описание — отдельный шрифт (системный serif), чтобы читалось как редакторская
-   выжимка, а не как текст, скопированный из Telegram. Serif системный — без
-   внешней загрузки (доступность в РФ, см. PROJECT.md). */
-.pexc{margin-top:8px;color:#5b5f6e;font:400 14px/1.55 Georgia,'Times New Roman',serif}
+/* Описание вакансии — тот же шрифт Manrope, что и на всём остальном сайте (без
+   отдельного serif, чтобы описание не выбивалось из общей типографики). */
+.pexc{margin-top:8px;color:#5b5f6e;font:400 14px/1.55 'Manrope',sans-serif}
 .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
 .tag{font-size:12px;font-weight:700;padding:4px 11px;border-radius:8px;background:var(--pill);color:var(--pill-ink)}
 .tag.tmore{color:#9095a5;background:transparent;padding-left:2px}
@@ -199,9 +197,9 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .tag.sal{background:#e7f7ec;color:#137a3a;font-weight:800}
 .tag.sal.est{background:transparent;border:1px dashed #cfd3dc;color:#8a8f9e;font-weight:700}
 
-/* Кнопка-«глаз» в правом верхнем углу карточки (рядом со временем, как значок
-   просмотров в Telegram): раскрывает полное описание вакансии прямо в карточке,
-   без ухода на отдельную страницу. Только иконка — не съедает ширину заголовка. */
+/* Кнопка-«глаз» в правом верхнем углу карточки (как значок просмотров в Telegram):
+   по клику показывает полное описание вакансии в плавающей панели ПОВЕРХ соседних
+   карточек — сама карточка не меняет размер. Только иконка — не съедает заголовок. */
 .eye{position:relative;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;
   border:1px solid var(--line);border-radius:8px;background:var(--card);color:#9095a5;cursor:pointer;transition:.13s}
 .eye svg{width:16px;height:16px}
@@ -213,13 +211,15 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
   white-space:nowrap;opacity:0;pointer-events:none;transform:translateY(3px);
   transition:opacity .13s,transform .13s;z-index:6;box-shadow:0 6px 18px rgba(24,24,31,.22)}
 .eye:hover::after{opacity:1;transform:translateY(0)}
-.post.expanded .eye{color:#1573c4;border-color:#cfe0f4;background:#f0f6fe}
-.pfull{display:none;margin-top:8px;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere;
-  font:400 14px/1.6 Georgia,'Times New Roman',serif}
-.feed:not(.rows) .post.expanded{height:auto}
-.post.expanded .pexc{display:none}
-.post.expanded .pfull{display:block}
-.feed.rows .eye,.feed.rows .pfull{display:none}
+.post.preview-active .eye{color:#1573c4;border-color:#cfe0f4;background:#f0f6fe}
+/* Плавающая панель предпросмотра: полное описание вакансии поверх ленты. Позицию
+   (left/top/width по карточке) выставляет JS; шрифт — тот же Manrope, что и на сайте. */
+.preview-pop{position:absolute;z-index:40;display:none;background:var(--card);border:1px solid var(--line);
+  border-radius:16px;box-shadow:0 24px 60px rgba(24,24,31,.28);padding:18px 20px;max-height:60vh;overflow:auto}
+.preview-pop.open{display:block}
+.preview-pop .pp-title{font:800 16px/1.3 'Manrope',sans-serif;letter-spacing:-.01em;color:var(--ink);margin-bottom:10px}
+.preview-pop .pp-body{font:400 14px/1.6 'Manrope',sans-serif;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere}
+.feed.rows .eye{display:none}
 
 /* Страница вакансии: описание, источник, работодатель, теги и кнопка «Откликнуться» */
 /* Страница вакансии — фиксированный слой ПОД хедером (top:61px = высота хедера
@@ -243,7 +243,7 @@ body.noscroll{overflow:hidden}
 .dmeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
 .dsec{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9095a5;margin:24px 0 10px}
 /* Описание на странице вакансии — тот же единый шрифт Manrope, что и в карточках. */
-.ddesc{font:400 16px/1.7 Georgia,'Times New Roman',serif;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere}
+.ddesc{font:400 16px/1.7 'Manrope',sans-serif;color:#31323c;white-space:pre-wrap;overflow-wrap:anywhere}
 .dtags{display:flex;gap:7px;flex-wrap:wrap}
 /* Зарплата на странице вакансии: реальная — акцентом, оценка — приглушённо с пометкой. */
 .dsal{display:inline-flex;align-items:baseline;gap:10px;font-size:20px;font-weight:800;color:#137a3a}
@@ -786,7 +786,6 @@ function cardCo(j){
     </div>
     <div class="ptitle">${esc(j.title)}</div>
     <div class="pexc">${esc(excerpt)}</div>
-    <div class="pfull">${esc(excerpt)}</div>
     ${tags?`<div class="tags">${tags}</div>`:""}
   </div>`;
 }
@@ -809,8 +808,6 @@ function cardTg(p){
   const tags=salPill(p)+metaPills([...fmt, ...grade])+skillChips(skills);
   // Описание есть у всех карточек: если пост без содержательного тела — подсказка.
   const exc=tgExcerpt(p.text, title) || "Подробности — на странице вакансии.";
-  // Полное описание раскрывается по «глазу»-предпросмотру прямо в карточке.
-  const full=stripPromo(p.text)||exc;
   return `<div class="post" data-kind="tg" data-id="${p._id}" data-link="${esc(p.link)}">
     <div class="ptop">${ava}
       <span class="src-name">${esc(srcName)}</span>
@@ -818,7 +815,6 @@ function cardTg(p){
     </div>
     <div class="ptitle">${esc(title)}</div>
     <div class="pexc">${esc(exc)}</div>
-    <div class="pfull">${esc(full)}</div>
     ${tags?`<div class="tags">${tags}</div>`:""}
   </div>`;
 }
@@ -850,6 +846,7 @@ function appendBatch(){
 }
 
 function renderFeed(){
+  if(typeof closePreview==="function") closePreview();   // карточки перерисовываются — закрываем предпросмотр
   filtered=applyFilters(); shown=0;
   document.getElementById("count").innerHTML = `<b>${filtered.length}</b> ${plural(filtered.length,"вакансия","вакансии","вакансий")}`;
   const feed=document.getElementById("feed"), state=document.getElementById("state");
@@ -891,15 +888,53 @@ new IntersectionObserver((es)=>{
 // предпросмотр полного описания прямо в карточке, без ухода на новую страницу.
 document.getElementById("feed").addEventListener("click", e=>{
   const eye=e.target.closest(".eye");
-  if(eye){                                          // «глаз»-предпросмотр раскрывает полное описание в карточке
-    const post=eye.closest(".post");
-    const open=post.classList.toggle("expanded");
-    eye.setAttribute("aria-expanded", open);
-    return;                                          // не открываем страницу — только разворачиваем
+  if(eye){                                          // «глаз» — предпросмотр в плавающей панели поверх соседних карточек
+    togglePreview(eye.closest(".post"));
+    return;                                          // не открываем страницу — только показываем описание
   }
   const post=e.target.closest(".post[data-id]");
   if(post) window.open("jobs.html#job="+post.dataset.id, "_blank", "noopener"); // новая вкладка со страницей вакансии
 });
+
+// ——— Плавающая панель предпросмотра («глаз») ———
+// Полное описание показываем НЕ разворотом карточки, а плавающей панелью ПОВЕРХ
+// соседних карточек: сама карточка не меняет размер. Панель «выпадает» из-под
+// карточки (позиция считается по её getBoundingClientRect в координатах документа).
+const previewPop=document.createElement("div");
+previewPop.className="preview-pop";
+document.body.appendChild(previewPop);
+let previewPost=null;
+function positionPreview(){
+  if(!previewPost) return;
+  const r=previewPost.getBoundingClientRect();
+  previewPop.style.width=r.width+"px";
+  previewPop.style.left=(r.left+window.scrollX)+"px";
+  previewPop.style.top=(r.bottom+window.scrollY+6)+"px";   // сразу под карточкой, поверх нижних карточек
+}
+function openPreview(post){
+  const p=byId.get(+post.dataset.id); if(!p) return;
+  const m=detailModel(p);
+  previewPop.innerHTML=`<div class="pp-title">${esc(m.title)}</div><div class="pp-body">${esc(m.desc)}</div>`;
+  if(previewPost) previewPost.classList.remove("preview-active");
+  previewPost=post; post.classList.add("preview-active");
+  const eye=post.querySelector(".eye"); if(eye) eye.setAttribute("aria-expanded","true");
+  positionPreview(); previewPop.classList.add("open"); previewPop.scrollTop=0;
+}
+function closePreview(){
+  if(!previewPost) return;
+  previewPost.classList.remove("preview-active");
+  const eye=previewPost.querySelector(".eye"); if(eye) eye.setAttribute("aria-expanded","false");
+  previewPost=null; previewPop.classList.remove("open"); previewPop.innerHTML="";
+}
+function togglePreview(post){ previewPost===post ? closePreview() : openPreview(post); }
+// Закрытие: клик вне панели и вне «глаза», Esc. Репозиция при resize (absolute в
+// координатах документа сам следует за скроллом, поэтому scroll не слушаем).
+document.addEventListener("click", e=>{
+  if(!previewPost || e.target.closest(".preview-pop") || e.target.closest(".eye")) return;
+  closePreview();
+});
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closePreview(); });
+window.addEventListener("resize", positionPreview);
 
 // ——— Страница вакансии ———
 const byId = new Map();       // _id → вакансия (заполняется в load)
