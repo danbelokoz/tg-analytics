@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Админка — мониторинг сбора</title>
+<meta name="robots" content="noindex" />
+<link rel="stylesheet" href="fonts/manrope.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f4f5f7;--card:#fff;--ink:#18181f;--muted:#6b6f7e;--line:#ececf0;--accent:#1573c4;
+  --ok:#137a3a;--okbg:#e7f7ec;--err:#c0392b;--errbg:#fdecea;--warnbg:#fff4e0;--warn:#a8710a}
+body{background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:26px 22px 60px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
+.brand i{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#2AABEE,#6366f1);display:inline-flex;
+  align-items:center;justify-content:center;font-style:normal;color:#fff;font-size:12px}
+.who{margin-left:auto;font-size:13px;color:var(--muted);font-weight:600}
+.who b{color:var(--ink)}
+.btn{padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);font:800 12.5px 'Manrope';
+  color:var(--ink);cursor:pointer;transition:.13s}
+.btn:hover{border-color:#d7dae2}
+h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:3px}
+.hint{color:var(--muted);font-size:13.5px;margin-bottom:20px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.cards{grid-template-columns:1fr}}
+.scard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;position:relative}
+.scard .top{display:flex;align-items:center;gap:10px}
+.dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--ok)}.dot.err{background:var(--err)}.dot.na{background:#c7cad2}
+.scard h3{font-size:15px;font-weight:800}
+.badge{margin-left:auto;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:8px}
+.badge.ok{background:var(--okbg);color:var(--ok)}
+.badge.err{background:var(--errbg);color:var(--err)}
+.badge.na{background:#eef0f3;color:var(--muted)}
+.when{margin-top:12px;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.when small{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-top:3px}
+.stats{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap}
+.stat .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat .k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.err-line{margin-top:12px;font-size:12.5px;font-weight:600;background:var(--errbg);color:var(--err);
+  padding:8px 11px;border-radius:9px;overflow-wrap:anywhere}
+.warn-line{background:var(--warnbg);color:var(--warn)}
+details{margin-top:10px}
+details summary{font-size:12.5px;font-weight:700;color:var(--accent);cursor:pointer;list-style:none}
+details ul{margin:8px 0 0;padding-left:16px;font-size:12px;color:var(--muted);line-height:1.7;max-height:180px;overflow:auto}
+.sec{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9095a5;margin:28px 0 12px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--line)}
+th{font-weight:800;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:none}
+td .pill{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.err{background:var(--errbg);color:var(--err)}
+.state{padding:50px 20px;text-align:center;color:var(--muted);font-weight:600}
+.mono{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><i>◈</i> Telemetria</div>
+    <span class="who" id="who"></span>
+    <button class="btn" id="refresh">Обновить</button>
+    <button class="btn" id="logout">Выйти</button>
+  </header>
+
+  <div id="root"><div class="state">Загрузка…</div></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const WF = {
+  tg:    { label: "TG-лента", note: "каждые 30 мин", unit: "вакансий" },
+  sites: { label: "Сайты компаний", note: "2×/сутки", unit: "вакансий" },
+};
+
+function ago(iso) {
+  if (!iso) return "никогда";
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "только что";
+  const m = Math.floor(s / 60); if (m < 60) return `${m} мин назад`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h} ч назад`;
+  const d = Math.floor(h / 24); return `${d} дн назад`;
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function statusCard(run, key) {
+  const meta = run && (WF[key] || { label: key, note: "", unit: "записей" });
+  if (!run) return `<div class="scard"><div class="top"><span class="dot na"></span>
+      <h3>${meta.label}</h3><span class="badge na">нет данных</span></div>
+      <div class="when">—<small>прогонов ещё не было</small></div></div>`;
+  const ok = run.ok;
+  const failedList = (run.meta && run.meta.failed) || [];
+  const emptyList = (run.meta && run.meta.empty) || [];
+  const drop = !ok && run.error;
+  return `<div class="scard">
+    <div class="top"><span class="dot ${ok ? "ok" : "err"}"></span>
+      <h3>${meta.label} <span style="color:var(--muted);font-weight:600;font-size:12px">· ${meta.note}</span></h3>
+      <span class="badge ${ok ? "ok" : "err"}">${ok ? "успешно" : "проблема"}</span></div>
+    <div class="when">${ago(run.finished_at)}<small title="${esc(run.finished_at)}">${new Date(run.finished_at).toLocaleString("ru-RU")}</small></div>
+    <div class="stats">
+      <div class="stat"><div class="v mono">${run.total ?? "—"}</div><div class="k">${meta.unit}${run.prev_total != null ? ` (было ${run.prev_total})` : ""}</div></div>
+      <div class="stat"><div class="v mono">${run.failed || 0}</div><div class="k">упало источников</div></div>
+    </div>
+    ${run.error ? `<div class="err-line ${drop ? "warn-line" : ""}">${esc(run.error)}</div>` : ""}
+    ${failedList.length ? `<details><summary>Упавшие источники (${failedList.length})</summary><ul>${failedList.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
+    ${emptyList.length ? `<details><summary>Пустые (0 вакансий): ${emptyList.length}</summary><ul>${emptyList.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
+  </div>`;
+}
+
+function historyRow(r) {
+  const meta = WF[r.workflow] || { label: r.workflow };
+  return `<tr>
+    <td>${new Date(r.finished_at).toLocaleString("ru-RU")}</td>
+    <td>${esc(meta.label)}</td>
+    <td><span class="pill ${r.ok ? "ok" : "err"}">${r.ok ? "ok" : "fail"}</span></td>
+    <td class="mono">${r.total ?? "—"}</td>
+    <td class="mono">${r.failed || 0}</td>
+    <td style="color:var(--muted)">${esc(r.error || "")}</td>
+  </tr>`;
+}
+
+async function load() {
+  // 1) кто я
+  const me = await fetch("/api/me").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!me) { location.href = "/login"; return; }
+  $("who").innerHTML = `<b>${esc(me.email)}</b> · ${esc(me.role)}`;
+  if (me.role !== "admin") {
+    $("root").innerHTML = `<div class="state">Доступ к мониторингу только у администраторов.<br>Ваша роль: ${esc(me.role)}.</div>`;
+    return;
+  }
+  // 2) статус
+  const st = await fetch("/api/status").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!st) { $("root").innerHTML = `<div class="state">Не удалось загрузить статус.</div>`; return; }
+
+  const byWf = {};
+  for (const run of st.latest) byWf[run.workflow] = run;
+  const cards = ["tg", "sites"].map((k) => statusCard(byWf[k], k)).join("");
+  const history = st.history.slice(0, 40).map(historyRow).join("");
+
+  $("root").innerHTML = `
+    <h1>Мониторинг сбора</h1>
+    <div class="hint">Когда и как прошёл последний сбор вакансий по каждому источнику.</div>
+    <div class="cards">${cards}</div>
+    <div class="sec">История прогонов</div>
+    ${st.history.length
+      ? `<table><thead><tr><th>Время</th><th>Источник</th><th>Статус</th><th>Собрано</th><th>Упало</th><th>Заметка</th></tr></thead><tbody>${history}</tbody></table>`
+      : `<div class="state">Прогонов ещё не было — появятся после ближайшего запуска скрейпера.</div>`}`;
+}
+
+$("refresh").onclick = load;
+$("logout").onclick = async () => { await fetch("/api/logout", { method: "POST" }); location.href = "/login"; };
+load();
+setInterval(load, 60000); // автообновление раз в минуту
+</script>
+</body>
+</html>
