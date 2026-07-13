@@ -149,14 +149,14 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
   background:var(--pill);font:800 13px 'Manrope';color:var(--ink);cursor:pointer;transition:.13s;white-space:nowrap}
 .salchip:hover{background:#e4e7ec}
 .salchip.on{background:var(--yellow);color:#18181f}
-.salchip .n{font-size:11px;font-weight:800;color:#adb1be}
+.salchip .n{font-size:10.5px;font-weight:800;color:#adb1be}
 .salchip.on .n{color:#93801d}
 
 /* Источник: пилюли с подписью в две строки (Telegram / Ru-global / Global / Russia) */
 .srcpills{display:flex;flex-wrap:wrap;gap:7px}
 .srcpill{display:flex;flex-direction:column;gap:2px;text-align:left;
   padding:8px 11px;border-radius:11px;border:1px solid transparent;
-  background:var(--pill);cursor:pointer;transition:.13s}
+  background:var(--pill);cursor:pointer;transition:.13s;font-family:'Manrope',sans-serif}
 .srcpill:hover{background:#e4e7ec}
 .srcpill.on{background:var(--yellow)}
 .srchead{display:flex;align-items:center;gap:6px}
@@ -667,7 +667,7 @@ function salaryGroup(label){
   const cells=SAL_BUCKETS.map((b,i)=>{
     if(!SAL_COUNTS[i]) return "";
     const on=active.has(b.label);
-    return `<button class="salchip${on?" on":""}" data-sal="${esc(b.label)}">${esc(b.label)}<span class="n">${compact(SAL_COUNTS[i])}</span></button>`;
+    return `<button class="salchip${on?" on":""}" data-sal="${esc(b.label)}">${esc(b.label)}<span class="n">${SAL_COUNTS[i]}</span></button>`;
   }).join("");
   if(!cells) return "";
   return `<div class="fgroup"><h4>${esc(label)}</h4><div class="salgrid">${cells}</div></div>`;
@@ -680,7 +680,7 @@ function sourceGroup(label, freq){
   const pills = SRC_CATS.map(cat=>{
     const on=active.has(cat);
     return `<button class="srcpill${on?" on":""}" data-src="${esc(cat)}" aria-pressed="${on}">
-      <span class="srchead"><b>${esc(cat)}</b><span class="n">${compact(freq[cat]||0)}</span></span>
+      <span class="srchead"><b>${esc(cat)}</b><span class="n">${freq[cat]||0}</span></span>
       <span class="srcsub">${esc(SRC_META[cat]||"")}</span>
     </button>`;
   }).join("");
