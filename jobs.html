@@ -362,7 +362,17 @@ footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 // сайт открывался в РФ без VPN (см. PROJECT.md). JSON обновляет CI после скрейпа.
 
 // Группы тегов для левого меню. Порядок = порядок в сайдбаре.
-const G_SRC   = ["Telegram","Компании"];
+// Источник — чипы-пилюли (Telegram / Ru-global / Global). «Компании» делим на
+// Ru-global (международные с RU-корнями) и Global по слагу компании (RU_ROOTS).
+const SRC_CATS = ["Telegram","Ru-global","Global"];
+// Слаги компаний с российскими корнями → Ru-global. Пополняй по мере роста сида
+// (parser/companies_ats.json). Слаг должен совпадать с company_slug в вакансии.
+const RU_ROOTS = new Set([
+  "yandex","nebius","clickhouse","plata",
+  // известные RU-rooted — на случай появления в сиде:
+  "jetbrains","miro","semrush","revolut","nginx","gett","luxoft","playrix",
+  "wargaming","indrive","ozon","wildberries","kaspersky","aviasales","selectel",
+]);
 const G_ROLE  = ["Frontend","Backend","Fullstack","Mobile","DevOps","QA","Data/ML","Аналитик","Design","Product","Project","Marketing","Sales","HR","Management","Support"];
 const G_STACK = ["Python","JS/TS","Java","PHP","Go",".NET/C#","1C"];
 const G_FMT   = ["Удалёнка","Гибрид","Офис","Релокация"];
@@ -383,11 +393,11 @@ const SAL = new Set(SAL_BUCKETS.map(b=>b.label));
 const SAL_BY = Object.fromEntries(SAL_BUCKETS.map(b=>[b.label,b]));
 let SAL_COUNTS = null;   // считаем один раз после загрузки данных
 const GROUPS = [
-  ["Источник", G_SRC], ["Роль", G_ROLE], ["Стек", G_STACK], ["Формат", G_FMT],
+  ["Источник", SRC_CATS], ["Роль", G_ROLE], ["Стек", G_STACK], ["Формат", G_FMT],
   ["зарплата, ₽", SAL_MARK],
   ["Грейд", G_GRADE], ["Занятость", G_EMPLOY], ["Прочее", G_OTHER],
 ];
-const SRC = new Set(G_SRC), FMT = new Set(G_FMT), GRADE = new Set(G_GRADE);
+const SRC = new Set(SRC_CATS), FMT = new Set(G_FMT), GRADE = new Set(G_GRADE);
 const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable", workday:"Workday", yandex:"yandex.ru/jobs"};
 
 let data = [], active = new Set(), sortNewest = true;
@@ -641,7 +651,7 @@ function salaryGroup(label){
 // Левое меню фильтров: теги, реально встречающиеся в данных, сгруппированы.
 function renderFilters(){
   const freq={};
-  data.forEach(p=>{ (p.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1); freq[p._src]=(freq[p._src]||0)+1; });
+  data.forEach(p=>{ (p.tags||[]).forEach(t=>freq[t]=(freq[t]||0)+1); freq[p._srcCat]=(freq[p._srcCat]||0)+1; });
   const el=document.getElementById("filters");
   let html="";
   if(active.size) html+=`<button class="clearbtn" data-clear="1">× Сбросить фильтры (${active.size})</button>`;
@@ -828,7 +838,7 @@ function applyFilters(){
   const sel=[...active], srcSel=sel.filter(t=>SRC.has(t)), salSel=sel.filter(t=>SAL.has(t)),
         tagSel=sel.filter(t=>!SRC.has(t)&&!SAL.has(t));
   return data.filter(p=>
-    (!srcSel.length || srcSel.includes(p._src)) &&
+    (!srcSel.length || srcSel.includes(p._srcCat)) &&
     tagSel.every(t=>(p.tags||[]).includes(t)) &&
     (!salSel.length || salSel.some(k=>salMatch(p,k))) &&
     (!term || p._search.includes(term))
@@ -1052,7 +1062,7 @@ function looksLikeVacancy(p){
 
 // Нормализация двух источников в единую модель карточки.
 function normTg(p){
-  p._src="Telegram";
+  p._src="Telegram"; p._srcCat="Telegram";
   p._search=((p.text||"")+" "+(p.channel_title||"")+" "+(p.username||"")).toLowerCase();
   p._salIv=parseSalary(p.text);              // зарплата разбирается из текста поста
   // Показываем реальную вилку, только если распознан ровно один диапазон
@@ -1064,6 +1074,8 @@ function normCo(j){
   const tags=(j.tags||[]).slice();
   if(j.work_format) tags.push(j.work_format);   // формат работы — фильтруемым тегом
   j.tags=tags; j._src="Компании";
+  // Ru-global (RU-корни) vs Global — по слагу компании. Слага нет → Global.
+  j._srcCat = RU_ROOTS.has(j.company_slug) ? "Ru-global" : "Global";
   j._search=((j.title||"")+" "+(j.company||"")+" "+(j.location||"")).toLowerCase();
   // Реальная вилка из ATS-описания (scrape_ats.py) указана ГОДОВОЙ → приводим к
   // месяцу (÷12), как и всё на сайте. Для фильтра — в ₽/мес, показываем в валюте.
