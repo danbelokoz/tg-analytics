@@ -1,5 +1,10 @@
 [
   {
+    "slug": "yandex",
+    "name": "Яндекс",
+    "ats": "yandex"
+  },
+  {
     "slug": "affirm",
     "name": "Affirm",
     "ats": "greenhouse",
