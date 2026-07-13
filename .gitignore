@@ -7,3 +7,5 @@ __pycache__/
 .venv/
 .vercel
 node_modules/
+.DS_Store
+graphify-out/
