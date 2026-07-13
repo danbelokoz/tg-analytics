@@ -379,11 +379,13 @@ footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 // Источник — карточки с подписью (Telegram / Ru-global / Global / Russia).
 // Категория вакансии (_srcCat): Telegram — посты из каналов; для компаний —
 // локация в России → Russia; иначе RU-корни → Ru-global; иначе Global.
-const SRC_CATS = ["Telegram","Ru-global","Global"];
+// Порядок = порядок пилюль. Telegram+Global (короткие) в первый ряд,
+// Ru-global (широкая подпись) переносится во второй — итого два ряда.
+const SRC_CATS = ["Telegram","Global","Ru-global"];
 const SRC_META = {
   "Telegram":  "Каналы и чаты",
-  "Ru-global": "Международные · с RU-корнями",
   "Global":    "Международные",
+  "Ru-global": "Международные · с RU-корнями",
 };
 // Слаги компаний с российскими корнями → Ru-global. Пополняй по мере роста сида
 // (parser/companies_ats.json). Слаг должен совпадать с company_slug в вакансии.
