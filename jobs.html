@@ -152,6 +152,22 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 .salchip .n{font-size:11px;font-weight:800;color:#adb1be}
 .salchip.on .n{color:#93801d}
 
+/* Источник: карточки с подписью (Telegram / Ru-global / Global / Russia), 2 в ряд */
+.srcgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.srccard{display:flex;align-items:flex-start;gap:8px;width:100%;text-align:left;
+  padding:12px 11px;border-radius:14px;border:1px solid var(--line);
+  background:var(--pill);cursor:pointer;transition:.13s}
+.srccard:hover{background:#e4e7ec}
+.srccard.on{background:var(--card);border-color:var(--ink)}
+.srcbox{flex:none;width:20px;height:20px;border-radius:6px;border:2px solid #cdd0d8;
+  background:var(--card);color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:.13s}
+.srccard.on .srcbox{background:var(--ink);border-color:var(--ink)}
+.srctxt{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.srctxt b{font-size:13.5px;font-weight:800;color:var(--ink);line-height:1.15}
+.srcsub{font-size:11px;font-weight:600;color:var(--muted);line-height:1.25}
+.srccard .n{flex:none;align-self:flex-start;font-size:10px;font-weight:800;color:#adb1be}
+.srccard.on .n{color:var(--muted)}
+
 /* Feed + card */
 /* align-items:start — карточки НЕ растягиваются на высоту ряда, а берут высоту
    по своему содержимому. Иначе (stretch) при раскрытии одной карточки «глазом»
@@ -362,9 +378,16 @@ footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 // сайт открывался в РФ без VPN (см. PROJECT.md). JSON обновляет CI после скрейпа.
 
 // Группы тегов для левого меню. Порядок = порядок в сайдбаре.
-// Источник — чипы-пилюли (Telegram / Ru-global / Global). «Компании» делим на
-// Ru-global (международные с RU-корнями) и Global по слагу компании (RU_ROOTS).
-const SRC_CATS = ["Telegram","Ru-global","Global"];
+// Источник — карточки с подписью (Telegram / Ru-global / Global / Russia).
+// Категория вакансии (_srcCat): Telegram — посты из каналов; для компаний —
+// локация в России → Russia; иначе RU-корни → Ru-global; иначе Global.
+const SRC_CATS = ["Telegram","Ru-global","Global","Russia"];
+const SRC_META = {
+  "Telegram":  "Каналы и чаты",
+  "Ru-global": "Международные · с RU-корнями",
+  "Global":    "Международные",
+  "Russia":    "Вакансии в России",
+};
 // Слаги компаний с российскими корнями → Ru-global. Пополняй по мере роста сида
 // (parser/companies_ats.json). Слаг должен совпадать с company_slug в вакансии.
 const RU_ROOTS = new Set([
@@ -373,6 +396,8 @@ const RU_ROOTS = new Set([
   "jetbrains","miro","semrush","revolut","nginx","gett","luxoft","playrix",
   "wargaming","indrive","ozon","wildberries","kaspersky","aviasales","selectel",
 ]);
+// Локация в России → категория Russia (приоритет над RU-корнями/Global).
+const RU_LOC = /росс|russia|москв|moscow|питер|petersburg|санкт|казан|новосиб|екатеринб|нижн\s*новг|краснодар|воронеж|сочи|\bрф\b/i;
 const G_ROLE  = ["Frontend","Backend","Fullstack","Mobile","DevOps","QA","Data/ML","Аналитик","Design","Product","Project","Marketing","Sales","HR","Management","Support"];
 const G_STACK = ["Python","JS/TS","Java","PHP","Go",".NET/C#","1C"];
 const G_FMT   = ["Удалёнка","Гибрид","Офис","Релокация"];
@@ -381,6 +406,7 @@ const G_EMPLOY= ["Стажировка","Фриланс","Part-time"];
 const G_OTHER = ["З/п указана","Дайджест"];
 // Диапазоны зарплат (₽/мес). Маркер SAL_MARK в GROUPS рисует особый блок (не теги).
 const SAL_MARK = "__SAL__";
+const SRC_MARK = "__SRC__";   // маркер блока карточек-источников в GROUPS
 const SAL_BUCKETS = [
   {label:"до 80k",   lo:0,      hi:80000},
   {label:"81–150k",  lo:80000,  hi:150000},
@@ -393,7 +419,7 @@ const SAL = new Set(SAL_BUCKETS.map(b=>b.label));
 const SAL_BY = Object.fromEntries(SAL_BUCKETS.map(b=>[b.label,b]));
 let SAL_COUNTS = null;   // считаем один раз после загрузки данных
 const GROUPS = [
-  ["Источник", SRC_CATS], ["Роль", G_ROLE], ["Стек", G_STACK], ["Формат", G_FMT],
+  ["Источник", SRC_MARK], ["Роль", G_ROLE], ["Стек", G_STACK], ["Формат", G_FMT],
   ["зарплата, ₽", SAL_MARK],
   ["Грейд", G_GRADE], ["Занятость", G_EMPLOY], ["Прочее", G_OTHER],
 ];
@@ -419,6 +445,8 @@ const hueOf = s => { let h=0; for(const c of (s||"")) h=(h*31+c.charCodeAt(0))%3
 const LINKOUT = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
 // Кнопка «глаз» — предпросмотр: раскрывает полное описание прямо в карточке.
 // Только иконка (как значок просмотров в Telegram), в правом верхнем углу карточки.
+// Галочка в чекбоксе карточки-источника (выбранное состояние).
+const SRC_CHECK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>';
 const EYE = '<button class="eye" type="button" aria-expanded="false" aria-label="Предпросмотр">'
   + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>';
 
@@ -648,6 +676,21 @@ function salaryGroup(label){
   return `<div class="fgroup"><h4>${esc(label)}</h4><div class="salgrid">${cells}</div></div>`;
 }
 
+// Источник — карточки-переключатели (Telegram / Ru-global / Global / Russia)
+// с подписью и счётчиком. Множественный выбор (OR). Карточки показываем всегда,
+// чтобы набор был стабильным (как на референс-макете).
+function sourceGroup(label, freq){
+  const cards = SRC_CATS.map(cat=>{
+    const on=active.has(cat);
+    return `<button class="srccard${on?" on":""}" data-src="${esc(cat)}" role="checkbox" aria-checked="${on}">
+      <span class="srcbox">${on?SRC_CHECK:""}</span>
+      <span class="srctxt"><b>${esc(cat)}</b><span class="srcsub">${esc(SRC_META[cat]||"")}</span></span>
+      <span class="n">${compact(freq[cat]||0)}</span>
+    </button>`;
+  }).join("");
+  return `<div class="fgroup"><h4>${esc(label)}</h4><div class="srcgrid">${cards}</div></div>`;
+}
+
 // Левое меню фильтров: теги, реально встречающиеся в данных, сгруппированы.
 function renderFilters(){
   const freq={};
@@ -656,6 +699,7 @@ function renderFilters(){
   let html="";
   if(active.size) html+=`<button class="clearbtn" data-clear="1">× Сбросить фильтры (${active.size})</button>`;
   for(const [label, members] of GROUPS){
+    if(members===SRC_MARK){ html += sourceGroup(label, freq); continue; }
     if(members===SAL_MARK){ html += salaryGroup(label); continue; }
     const present=members.filter(t=>freq[t]).sort((a,b)=>freq[b]-freq[a]);
     if(!present.length) continue;
@@ -673,6 +717,11 @@ function renderFilters(){
   // диапазоны зарплат — OR внутри группы
   el.querySelectorAll("[data-sal]").forEach(b=>b.onclick=()=>{
     const t=b.dataset.sal; active.has(t)?active.delete(t):active.add(t);
+    renderFilters(); renderFeed();
+  });
+  // карточки-источники — OR внутри группы
+  el.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{
+    const t=b.dataset.src; active.has(t)?active.delete(t):active.add(t);
     renderFilters(); renderFeed();
   });
   const clr=el.querySelector("[data-clear]");
@@ -1074,8 +1123,9 @@ function normCo(j){
   const tags=(j.tags||[]).slice();
   if(j.work_format) tags.push(j.work_format);   // формат работы — фильтруемым тегом
   j.tags=tags; j._src="Компании";
-  // Ru-global (RU-корни) vs Global — по слагу компании. Слага нет → Global.
-  j._srcCat = RU_ROOTS.has(j.company_slug) ? "Ru-global" : "Global";
+  // Категория: локация в России → Russia; иначе RU-корни → Ru-global; иначе Global.
+  j._srcCat = RU_LOC.test(j.location||"") ? "Russia"
+            : RU_ROOTS.has(j.company_slug) ? "Ru-global" : "Global";
   j._search=((j.title||"")+" "+(j.company||"")+" "+(j.location||"")).toLowerCase();
   // Реальная вилка из ATS-описания (scrape_ats.py) указана ГОДОВОЙ → приводим к
   // месяцу (÷12), как и всё на сайте. Для фильтра — в ₽/мес, показываем в валюте.
