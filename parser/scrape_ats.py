@@ -29,6 +29,8 @@ import datetime as dt
 import concurrent.futures as cf
 import urllib.request
 import urllib.error
+sys.path.insert(0, os.path.dirname(__file__))
+from langfilter import lang_ok   # оставляем только русский/английский
 
 SEED = os.environ.get("SEED", os.path.join(os.path.dirname(__file__), "companies_ats.json"))
 OUT = os.environ.get("OUT", "data/company_jobs.json")
@@ -471,12 +473,20 @@ def main():
                 empty_names.append(c["name"])
             print(f"[{i}/{len(companies)}] {c['name']} ({c['ats']}): {len(jobs)}")
 
+    # Оставляем только вакансии с описанием на русском или английском; прочие
+    # языки (es/pt/fr/it/de — напр. Plata из Мексики) убираем (см. langfilter).
+    before = len(all_jobs)
+    all_jobs = [j for j in all_jobs
+                if lang_ok(f"{j.get('title') or ''} {j.get('excerpt') or ''}")]
+    dropped_lang = before - len(all_jobs)
+
     # свежие сверху; вакансии без даты — в конец
     all_jobs.sort(key=lambda j: j.get("posted_at") or "", reverse=True)
     os.makedirs(os.path.dirname(OUT) or ".", exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(all_jobs, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"Готово: {ok} компаний ок, {fail} с ошибкой, {len(all_jobs)} вакансий → {OUT}")
+    print(f"Готово: {ok} компаний ок, {fail} с ошибкой, "
+          f"{len(all_jobs)} вакансий (отсеяно по языку: {dropped_lang}) → {OUT}")
 
     # Статус прогона → админ-дешборд (health-check внутри: резкое падение total = ok:false)
     status.record("sites", total=len(all_jobs), failed=fail, prev=status.prev_total("sites"),

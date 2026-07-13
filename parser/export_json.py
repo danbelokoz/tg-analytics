@@ -23,6 +23,9 @@ import datetime as dt
 
 import requests
 
+sys.path.insert(0, os.path.dirname(__file__))
+from langfilter import lang_ok   # оставляем только русский/английский
+
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 OUT_DIR = os.environ.get("OUT_DIR", "data")
@@ -79,7 +82,9 @@ def main():
                      params={"select": "*", "order": "posted_at.desc", "limit": 500},
                      timeout=60)
     r.raise_for_status()
-    write_json("job_feed.json", r.json())
+    # Только русский/английский — прочие языки убираем (см. langfilter).
+    feed = [p for p in r.json() if lang_ok(p.get("text") or "")]
+    write_json("job_feed.json", feed)
 
     print("Готово.")
 
