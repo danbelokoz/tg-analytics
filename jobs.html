@@ -379,12 +379,11 @@ footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 // Источник — карточки с подписью (Telegram / Ru-global / Global / Russia).
 // Категория вакансии (_srcCat): Telegram — посты из каналов; для компаний —
 // локация в России → Russia; иначе RU-корни → Ru-global; иначе Global.
-const SRC_CATS = ["Telegram","Ru-global","Global","Russia"];
+const SRC_CATS = ["Telegram","Ru-global","Global"];
 const SRC_META = {
   "Telegram":  "Каналы и чаты",
   "Ru-global": "Международные · с RU-корнями",
   "Global":    "Международные",
-  "Russia":    "Вакансии в России",
 };
 // Слаги компаний с российскими корнями → Ru-global. Пополняй по мере роста сида
 // (parser/companies_ats.json). Слаг должен совпадать с company_slug в вакансии.
@@ -1118,9 +1117,8 @@ function normCo(j){
   const tags=(j.tags||[]).slice();
   if(j.work_format) tags.push(j.work_format);   // формат работы — фильтруемым тегом
   j.tags=tags; j._src="Компании";
-  // Категория: локация в России → Russia; иначе RU-корни → Ru-global; иначе Global.
-  j._srcCat = RU_LOC.test(j.location||"") ? "Russia"
-            : RU_ROOTS.has(j.company_slug) ? "Ru-global" : "Global";
+  // Категория: RU-корни ИЛИ локация в России → Ru-global; иначе Global.
+  j._srcCat = (RU_ROOTS.has(j.company_slug) || RU_LOC.test(j.location||"")) ? "Ru-global" : "Global";
   j._search=((j.title||"")+" "+(j.company||"")+" "+(j.location||"")).toLowerCase();
   // Реальная вилка из ATS-описания (scrape_ats.py) указана ГОДОВОЙ → приводим к
   // месяцу (÷12), как и всё на сайте. Для фильтра — в ₽/мес, показываем в валюте.
