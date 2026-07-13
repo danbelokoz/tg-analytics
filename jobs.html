@@ -167,10 +167,13 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
    даже без растяжения по высоте ряда. */
 .feed:not(.rows) .post{display:flex;flex-direction:column;min-height:186px}
 .post{cursor:pointer}
-.feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
-.feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
-/* Зона тегов не выпускает пилюли за свои пределы (макс. две строки). */
-.feed:not(.rows) .tags{max-height:64px;overflow:hidden}
+.feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:2.5em}
+.feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:3.1em}
+/* Зона тегов — фиксированная высота под две строки пилюль, всегда присутствует
+   (даже пустая), чтобы ВСЕ карточки в сетке были одной высоты: заголовок и
+   описание уже зажаты в 2 строки, поэтому фикс тегов делает блоки единого размера.
+   align-content:flex-start — одна строка пилюль прижата к верху зоны. */
+.feed:not(.rows) .tags{height:58px;margin-top:13px;overflow:hidden;align-content:flex-start}
 .post:hover{border-color:#dfe2e8;box-shadow:0 8px 24px rgba(24,24,31,.07)}
 /* Шапка карточки — всегда одна строка фиксированной высоты, чтобы заголовки
    всех карточек стартовали на одном уровне (пилюли формата/грейда ушли в нижнюю
@@ -786,7 +789,7 @@ function cardCo(j){
     </div>
     <div class="ptitle">${esc(j.title)}</div>
     <div class="pexc">${esc(excerpt)}</div>
-    ${tags?`<div class="tags">${tags}</div>`:""}
+    <div class="tags">${tags}</div>
   </div>`;
 }
 
@@ -815,7 +818,7 @@ function cardTg(p){
     </div>
     <div class="ptitle">${esc(title)}</div>
     <div class="pexc">${esc(exc)}</div>
-    ${tags?`<div class="tags">${tags}</div>`:""}
+    <div class="tags">${tags}</div>
   </div>`;
 }
 
@@ -907,9 +910,11 @@ let previewPost=null;
 function positionPreview(){
   if(!previewPost) return;
   const r=previewPost.getBoundingClientRect();
+  const eye=previewPost.querySelector(".eye");
+  const er=eye?eye.getBoundingClientRect():r;
   previewPop.style.width=r.width+"px";
   previewPop.style.left=(r.left+window.scrollX)+"px";
-  previewPop.style.top=(r.bottom+window.scrollY+6)+"px";   // сразу под карточкой, поверх нижних карточек
+  previewPop.style.top=(er.bottom+window.scrollY+6)+"px";  // сразу под «глазом» (кнопкой «Предпросмотр»), поверх карточки и нижних карточек
 }
 function openPreview(post){
   const p=byId.get(+post.dataset.id); if(!p) return;
@@ -1016,13 +1021,28 @@ const ROLE_SET = new Set(G_ROLE);
 // «Структурные» признаки вакансии: грейд/формат/занятость/з-п. Одно упоминание
 // роли без них — обычно статья, а не вакансия.
 const CORROB_SET = new Set([...G_GRADE, ...G_FMT, ...G_EMPLOY, "З/п указана"]);
-const VAC_RE = /ваканс|ищ(?:ем|ет|у|ете|ут)(?![а-яё])|в поиске\s+\S|требуется|требуются|в команду|hiring|we['\s]?re looking|we are looking|looking for a|открыт[аы]?\s+(?:вакансия|позиц|наб)|обязанност|требовани[яей]|мы предлагаем|что предлагаем|условия работы|з\/п|зарплат|оклад|вилка\s|резюме|откликнут|apply now|join (?:our|the) team|должность[:\s]|позиция[:\s]/i;
-const ADV_RE = /(?<![а-яёa-z])курс|обучени|научит[ьс]|запиш[иу]|вебинар|интенсив|мастер-?класс|марафон|буткемп|bootcamp|наставник|подписывайт|подписка на|промокод|розыгрыш|скидк|(?<![а-яёa-z])реклам|\berid\b|разбор.{0,15}резюме|карьерн\w*\s+консультац/i;
+// NB: «з/п», «зарплат», «оклад», «резюме» (без контекста) НЕ считаем сильным
+// маркером найма — они есть в контентных постах-советах про зарплату/резюме
+// («Никогда не ставьте зарплату в резюме»). Зарплата учитывается как «З/п указана».
+const VAC_RE = /ваканс|ищ(?:ем|ет|у|ете|ут)(?![а-яё])|в поиске\s+\S|требуется|требуются|в команду|hiring|we['\s]?re looking|we are looking|looking for a|открыт[аы]?\s+(?:вакансия|позиц|наб)|обязанност|требовани[яей]|мы предлагаем|что предлагаем|условия работы|откликнут|присылайт[а-яё]*\s+резюме|резюме\s+(?:на|отправ|направ|присыл|ждем|ждём|жду)|apply now|join (?:our|the) team|должность[:\s]|позиция[:\s]/i;
+// Реклама/курсы/КОНТЕНТ (советы, «как…», подборки, listicle) — не вакансии; отсекаем,
+// если нет СТРУКТУРНОГО маркера найма. (\b/\w в JS не ловят кириллицу — границы через [а-яё].)
+const ADV_RE = /(?<![а-яёa-z])курс|обучени|научит[ьс]|запиш[иу]|вебинар|интенсив|мастер-?класс|марафон|буткемп|bootcamp|наставник|подписывайт|подписка на|промокод|розыгрыш|скидк|(?<![а-яёa-z])реклам|\berid\b|разбор.{0,15}резюме|карьерн[а-яё]*\s+консультац|никогда не |как\s+(?:напис|состав|пройти|устро|получ|найти|выбра|стать|повыс|оформ|заполн|проход|отвеча|подготов)|\d+\s*(?:ошиб|совет|способ|причин|правил|лайфхак|признак|фраз)|(?<![а-яё])советы|лайфхак|чек-?лист|памятк|что делать,?\s+если|почему\s+(?:вы|вам|тебе|не стоит|нельзя|важно|нужно)|подборк[а-яё]*\s+(?:книг|материал|канал|курс|ресурс|инструмент|подкаст|стат)/i;
+// Структурные маркеры вакансии (в отличие от простого слова «вакансия», которое есть
+// и в постах-советах про вакансии): глаголы найма, разделы, CTA, «#вакансия»/«Вакансия:».
+const STRUCT_VAC = /ищ(?:ем|ет|у|ете|ут)(?![а-яё])|требуется|требуются|в команду|hiring|we['\s]?re looking|we are looking|looking for a|открыт[аы]?\s+(?:вакансия|позиц|наб)|обязанност|требовани[яей]|мы предлагаем|что предлагаем|условия работы|откликнут|присылайт[а-яё]*\s+резюме|резюме\s+(?:на|отправ|направ|присыл|ждем|ждём|жду)|apply now|join (?:our|the) team|должность[:\s]|позиция[:\s]|#вакансия|ваканси[яию]\s*[:\-—]/i;
+// Навигация/оглавление канала («Сотни вакансий и полезных материалов ⚡», «Свежие
+// вакансии по городам: Работа в Москве / Санкт-Петербурге / …») — это меню канала,
+// а не вакансия, хотя и содержит слово «вакансии». Отсекаем даже при VAC_RE: либо по
+// маркеру-фразе (NAV_RE), либо по списку из 3+ ссылок «Работа в <Город>».
+const NAV_RE = /сотни\s+ваканс|тысяч[аи]?\s+ваканс|ваканси[ий]\s+по\s+город|свежие\s+ваканси|полезны[йх]\s+материал|навигаци[яю]\s+по\s+канал|интересные\s+стать/i;
+const CITY_RE = /работа\s+в[оo]?\s+[А-ЯЁ]/gi;
 function looksLikeVacancy(p){
   const tags=p.tags||[], text=p.text||"";
+  if(NAV_RE.test(text) || (text.match(CITY_RE)||[]).length>=3) return false;  // оглавление/меню канала
   if(tags.includes("Дайджест")) return true;            // подборки вакансий оставляем
   const strong=VAC_RE.test(text);
-  if(ADV_RE.test(text) && !strong) return false;        // реклама/курсы/контент без найма
+  if(ADV_RE.test(text) && !STRUCT_VAC.test(text)) return false;  // реклама/курсы/контент без СТРУКТУРНОГО маркера найма
   // Лучше отсечь лишнее, чем пропустить мусор: роль засчитываем как вакансию только
   // вместе со структурным признаком (грейд/формат/занятость/з-п); явный маркер найма
   // достаточен сам по себе.
