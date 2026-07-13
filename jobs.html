@@ -594,6 +594,28 @@ const BRANDS = {
   tinkoff:["#ffdd2d","#1b1b1f"], tbank:["#ffdd2d","#1b1b1f"], wildberries:"#cb11ab",
   avito:"#04b34f", jetbrains:"#1b1b1f",
 };
+// Слаги компаний, для которых лежит логотип в /logos/{slug}.png (скачаны один раз
+// на сборке, см. parser/fetch_logos.py — отдаём со своего домена ради доступности
+// в РФ). Кого нет в наборе — рисуется буква-бейдж (мягкая деградация).
+const LOGOS = new Set([
+  "affirm","airbnb","airwallex","alphasense","anthropic","arize-ai","asana","baseten",
+  "binalyze","binance","black-forest-labs","boltnew-stackblitz","canonical","canva",
+  "cd-projekt-red","characterai","clickhouse","clickup","cognition","cohere","coinbase",
+  "coreweave","crowdstrike","cursor-ai","databricks","datadog","decagon","deepgram",
+  "deepl","descript","discord","elevenlabs","fay","figma","freed","gamma","glean",
+  "google-deepmind","harvey","hugging-face","inflection-ai","jasper","jetbrains",
+  "k2-space-corporation","kog","krea-ai","langchain","larian-studios","legora","linear",
+  "llamaindex","lovable","mercury","metronome","moonshot-ai","naughty-dog","nebius",
+  "notion","objective-group","okta","okx","olipop-pbc","openai","owner","periodic-labs",
+  "perplexity","phantom","photoroom","polyai","polymarket","poolside","postman",
+  "postscript","proof","proton","quora-poe","razer","recraft","reddit","redis","replit",
+  "revolut","riot-games","robinhood","roblox","rockstargames","runway","sandboxaq",
+  "saronic","scale-ai","sesame","snorkel-ai","snowflake","spacex","specterops","splice",
+  "stability-ai","stripe","suno","supabase","synthesia","tensorwave","tenstorrent",
+  "the-exploration-company","thinking-machines-lab","tines","twilio","vapi","vercel",
+  "verkor","waymo","whoop","wispr-flow","wiz","writer","xai","yandex","yazio","zapier",
+  "zoox"
+]);
 function brandOf(name){
   const b=BRANDS[norm(name)];
   if(!b) return null;
@@ -601,11 +623,19 @@ function brandOf(name){
 }
 // Кружок-аватар: у известной компании — фирменный цвет (логотип-бейдж),
 // иначе — стабильный цвет по имени + буква.
-function badge(name, fallbackHue){
+function badge(name, fallbackHue, logoSlug){
   const initial=esc((name||"?").trim().charAt(0).toUpperCase());
   const b=brandOf(name);
-  const style=b?`background:${b.bg};color:${b.fg}`:`background:hsl(${fallbackHue} 42% 46%);color:#fff`;
-  return `<div class="ava${b?" brand":""}" style="${style}">${initial}</div>`;
+  const hasLogo = logoSlug && LOGOS.has(logoSlug);
+  // С лого — белая подложка (прозрачные PNG сидят на белом), буква видна только
+  // если картинка не загрузилась (onerror убирает <img>, см. PROJECT.md про РФ).
+  const style = hasLogo ? "background:#fff;color:#18181f"
+    : b ? `background:${b.bg};color:${b.fg}`
+    : `background:hsl(${fallbackHue} 42% 46%);color:#fff`;
+  const img = hasLogo
+    ? `<img class="avimg" src="logos/${esc(logoSlug)}.png" alt="" loading="lazy" onerror="this.remove()">`
+    : "";
+  return `<div class="ava${hasLogo||b?" brand":""}" style="${style}">${initial}${img}</div>`;
 }
 
 function timeAgo(iso){
@@ -630,7 +660,7 @@ function avatar(c){
 // Аватар компании: известная — с фирменным цветом-логотипом (badge), остальные —
 // буква на стабильном цвете по имени (без внешних картинок, см. PROJECT.md).
 function avatarCo(j){
-  return badge(j.company, hueOf(j.company_slug||j.company));
+  return badge(j.company, hueOf(j.company_slug||j.company), j.company_slug);
 }
 
 // Малая группа: обычные чипы. Большая: поле-триггер + раскрываемый список с поиском,
