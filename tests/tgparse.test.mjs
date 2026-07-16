@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { parseTgJob } = require("../tgparse.js");
+const { extractSkills } = createRequire(import.meta.url)("../tgparse.js");
 
 test("«роль в Компания» — вытаскивает и должность, и компанию", () => {
   const r = parseTgJob("QA Engineer (Data Stack) в Exness\n\nРебята активно ищут", []);
@@ -367,6 +368,21 @@ test("реальный пост: stripCompany не откусывает посл
     ["Marketing","Удалёнка"],
   );
   assert.equal(r.title, "Старший менеджер спецпроектов");
+});
+
+// --- Задача 4: словарь навыков для чипов карточки ---
+
+test("навыки — из текста, строчными, без дублей", () => {
+  const s = extractSkills("4+ года опыта, SQL, Python, опыт в fintech и AI-агентах. Kafka, Docker.");
+  assert.deepEqual(s, ["python", "sql", "kafka", "docker", "ai", "fintech"]);
+});
+
+test("границы слова: go не ловится в google", () => {
+  assert.deepEqual(extractSkills("Работаем с Google Ads и Google Analytics"), []);
+});
+
+test("пустой текст — пустой список", () => {
+  assert.deepEqual(extractSkills(""), []);
 });
 
 // Баг Б: без guard'а "!T_HIRES.test(headLine)" на шаге 2 первая строка вида

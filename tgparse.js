@@ -285,7 +285,50 @@ function parseTgJob(text, tags) {
   return { title: title || null, company };
 }
 
+// Навыки для чипов карточки. Порядок словаря = порядок чипов: сначала языки и
+// инструменты, потом домен. Ключ — то, что показываем; значения — как это пишут
+// в постах. Границы слова обязательны: «go» не должно ловиться в «google».
+const SKILLS = [
+  ["python", ["python", "питон", "django", "fastapi"]],
+  ["sql", ["sql", "postgres", "postgresql", "mysql", "clickhouse"]],
+  ["js/ts", ["javascript", "typescript", "react", "vue", "node.js", "nodejs"]],
+  ["java", ["java", "kotlin", "spring"]],
+  ["go", ["golang", "go"]],
+  ["php", ["php", "laravel"]],
+  ["1c", ["1с", "1c"]],
+  ["kafka", ["kafka", "кафка"]],
+  ["docker", ["docker", "докер"]],
+  ["kubernetes", ["kubernetes", "k8s"]],
+  ["ci/cd", ["ci/cd", "gitlab ci", "jenkins"]],
+  ["linux", ["linux", "линукс"]],
+  ["git", ["git"]],
+  ["figma", ["figma", "фигма"]],
+  ["excel", ["excel", "эксель"]],
+  ["seo", ["seo", "сео"]],
+  ["smm", ["smm", "смм"]],
+  ["ai", ["ai", "искусственн", "llm", "gpt", "ml", "machine learning"]],
+  ["saas", ["saas"]],
+  ["b2b", ["b2b"]],
+  ["fintech", ["fintech", "финтех"]],
+  ["e-commerce", ["e-commerce", "ecommerce", "маркетплейс"]],
+];
+
+// Кириллице разрешаем свободный суффикс («докер» → «докера»), латинице — обе
+// границы. Та же логика, что в _kw_rx скрейпера (parser/scrape_posts.py).
+const CYR = /[а-яё]/i;
+const skillRx = words => new RegExp(
+  words.map(w => {
+    const e = w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return CYR.test(w) ? `(?<![а-яёa-z0-9])${e}` : `(?<![a-z0-9])${e}(?![a-z0-9])`;
+  }).join("|"), "i");
+const SKILL_RX = SKILLS.map(([name, words]) => [name, skillRx(words)]);
+
+function extractSkills(text) {
+  const t = String(text || "");
+  return SKILL_RX.filter(([, rx]) => rx.test(t)).map(([name]) => name);
+}
+
 // Экспорт: в браузере функции уже глобальны, в Node — через module.exports.
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { parseTgJob, cleanCo };
+  module.exports = { parseTgJob, cleanCo, extractSkills };
 }
