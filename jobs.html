@@ -197,6 +197,7 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
   justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
 .avimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
 .ava.brand{box-shadow:inset 0 0 0 1px rgba(24,24,31,.06)}
+.ava.tg{background:#e8f1fb;color:#2f8ee0}
 .src-name{font-weight:800;font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mpill{font-size:12px;font-weight:700;color:var(--pill-ink);background:var(--pill);padding:4px 10px;border-radius:8px;white-space:nowrap}
 .mpill.co{background:#eaf3ff;color:#1573c4;font-weight:800}
@@ -638,6 +639,17 @@ function badge(name, fallbackHue, logoSlug){
     : "";
   return `<div class="ava${hasLogo||b?" brand":""}" style="${style}">${initial}${img}</div>`;
 }
+// Значок Telegram — inline-SVG: никаких внешних запросов, грузится из РФ.
+const TG_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9.8 15.6 9.6 19c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.8.4 1.3.2 1.5-.7l2.7-12.6c.3-1.1-.4-1.6-1.1-1.3L2.9 10.4c-1.1.4-1.1 1-.2 1.3l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-7.7 7z"/></svg>`;
+// Аватар TG-карточки: логотип компании, если он у нас есть; иначе — значок Telegram.
+function avatarTg(company){
+  const slug = company ? slugOf(company) : null;
+  if (slug && LOGOS.has(slug)) return badge(company, hueOf(slug), slug);
+  return `<div class="ava tg">${TG_ICON}</div>`;
+}
+// Слаг компании для сопоставления с logos/*.png («Cloud.ru» → «cloud-ru»).
+const slugOf = s => String(s || "").toLowerCase().trim()
+  .replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
 
 function timeAgo(iso){
   if(!iso) return "";
@@ -772,10 +784,11 @@ function renderFilters(){
 // Мета-пилюли (серые) и скилл-чипы — раскладка как у карточки job-борда:
 // сверху рядом с источником формат/локация/грейд, под заголовком — роль/стек.
 function metaPills(arr){ return arr.filter(Boolean).map(m=>`<span class="mpill">${esc(m)}</span>`).join(""); }
+// Чипы навыков: 5 штук + счётчик остатка, как в референсном макете.
 function skillChips(skills){
-  const shown=skills.slice(0,8), extra=skills.length-shown.length;
+  const shown=skills.slice(0,5), extra=skills.length-shown.length;
   return shown.map(t=>`<span class="tag">${esc(t)}</span>`).join("")
-    + (extra>0?`<span class="tag tmore">+${extra}</span>`:"");
+    + (extra>0?`<span class="tag tmore">+${extra} skills</span>`:"");
 }
 // Пилюля зарплаты в зоне тегов: реальная вилка выделена, оценка — приглушённо с «≈».
 function salPill(p){
@@ -842,22 +855,18 @@ function cardCo(j){
 function cardTg(p){
   const grade=(p.tags||[]).filter(t=>GRADE.has(t));
   const fmt=(p.tags||[]).filter(t=>FMT.has(t));
-  const skills=(p.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t));
   const {title:jobTitle, company} = parseTgJob(p.text, p.tags);
-  // Заголовок и имя источника гарантируем всегда, чтобы карточки не выходили
-  // пустыми (дайджесты и посты, где эвристика не выделила должность/компанию):
-  // должность → компания → первая строка поста; имя — компания или сам канал.
   const isDigest=(p.tags||[]).includes("Дайджест");
   const title = jobTitle || firstLine(p.text) || (isDigest?"Подборка вакансий":"Вакансия");
-  const srcName = company || p.channel_title || p.username || "Вакансия";
-  // Аватар: у известной компании — фирменный логотип-бейдж, иначе — по каналу.
-  const ava = badge(company||srcName, hueOf(company||p.username));
-  // Пилюли формата/грейда — в нижней зоне тегов вместе со скиллами (единая зона).
-  const tags=salPill(p)+metaPills([...fmt, ...grade])+skillChips(skills);
-  // Описание есть у всех карточек: если пост без содержательного тела — подсказка.
+  // Имя канала в карточке не показываем: либо работодатель, либо общая подпись.
+  const srcName = company || "Вакансии из каналов ТГ";
+  // Чипы — стек и навыки из текста поста (роли остаются тегами для фильтров слева).
+  // Дайджест — список из нескольких разных вакансий: extractSkills собрал бы
+  // скиллы вперемешку из чужих постов, поэтому для дайджестов чипы навыков не рендерим.
+  const tags=salPill(p)+metaPills([...fmt, ...grade])+(isDigest?"":skillChips(extractSkills(p.text)));
   const exc=tgExcerpt(p.text, title) || "Подробности — на странице вакансии.";
   return `<div class="post" data-kind="tg" data-id="${p._id}" data-link="${esc(p.link)}">
-    <div class="ptop">${ava}
+    <div class="ptop">${avatarTg(company)}
       <span class="src-name">${esc(srcName)}</span>
       <span class="ptime">${timeAgo(p.posted_at)}</span>${EYE}
     </div>
@@ -1009,8 +1018,7 @@ function detailModel(p){
   const isDigest=(p.tags||[]).includes("Дайджест");
   const ch=p.username?"@"+esc(p.username):esc(p.channel_title||"");
   return {
-    ava:badge(co||p.channel_title||p.username, hueOf(co||p.username)),
-    company:co||p.channel_title||p.username||"Вакансия",
+    ava:avatarTg(co), company:co||"Вакансии из каналов ТГ",
     source:`Telegram-канал${ch?` · ${ch}`:""}`,
     title:jt||firstLine(p.text)||(isDigest?"Подборка вакансий":"Вакансия"),
     desc:stripPromo(p.text)||"—",

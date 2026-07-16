@@ -128,14 +128,18 @@ function companyFrom(lines) {
 // остальные паттерны (см. lines в parseTgJob) — иначе в длинном посте-подборке
 // без тега «Дайджест» можно случайно зацепить бренд из середины списка вакансий,
 // а не из текущей. Пополнять список по результатам tests/coverage.mjs.
-const BRANDS = [
+// Имя KNOWN_BRANDS (не BRANDS) — намеренно: jobs.html подключает этот файл
+// обычным <script>, и оба файла делят один глобальный scope; там уже есть
+// свой const BRANDS (цвета бейджей), совпадение имён валило бы весь скрипт
+// SyntaxError'ом «Identifier has already been declared».
+const KNOWN_BRANDS = [
   "Яндекс","Yandex","Ozon","Wildberries","Сбер","Sber","Тинькофф","Т-Банк","Авито","Avito",
   "VK","МТС","Мегафон","Билайн","Альфа-Банк","Газпромбанк","Х5","Лента","Магнит","Самокат",
   "Райффайзен","Точка","Skyeng","Ламода","Lamoda","Циан","Домклик","Купер","Exness","Kaspi",
   "InDrive","Nebius","ClickHouse","JetBrains","Miro","Semrush","Revolut","Plata","Aviasales",
   "Selectel","Cloud.ru","Positive Technologies","Kaspersky","Касперск","2ГИС","2GIS",
 ];
-const BRAND_RX = BRANDS.map(b => [b, new RegExp(
+const KNOWN_BRAND_RX = KNOWN_BRANDS.map(b => [b, new RegExp(
   `(?<![\\p{L}\\p{N}])${b.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu")]);
 
 function brandFrom(lines) {
@@ -162,7 +166,7 @@ function brandFrom(lines) {
     // Запятые/слэши считаем по строке без ссылки — иначе «https://…/…» сама по
     // себе даёт 2+ слэшей (реальный пост morejobs/15925: «…Aviasales: https://adndx.ru/FtENV»).
     const delimCount = (noUrl.match(/[,/]/gu) || []).length;
-    for (const [name, rx] of BRAND_RX) {
+    for (const [name, rx] of KNOWN_BRAND_RX) {
       const m = rx.exec(line);
       if (!m) continue;
       if (hadUrl) {
