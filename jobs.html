@@ -859,7 +859,7 @@ function cardTg(p){
   const isDigest=(p.tags||[]).includes("Дайджест");
   const title = jobTitle || firstLine(p.text) || (isDigest?"Подборка вакансий":"Вакансия");
   // Имя канала в карточке не показываем: либо работодатель, либо общая подпись.
-  const srcName = company || "Вакансии из каналов ТГ";
+  const srcName = company || "Из TG-каналов";
   // Чипы — стек и навыки из текста поста (роли остаются тегами для фильтров слева).
   // Дайджест — список из нескольких разных вакансий: extractSkills собрал бы
   // скиллы вперемешку из чужих постов, поэтому для дайджестов чипы навыков не рендерим.
@@ -1018,7 +1018,7 @@ function detailModel(p){
   const isDigest=(p.tags||[]).includes("Дайджест");
   const ch=p.username?"@"+esc(p.username):esc(p.channel_title||"");
   return {
-    ava:avatarTg(co), company:co||"Вакансии из каналов ТГ",
+    ava:avatarTg(co), company:co||"Из TG-каналов",
     source:`Telegram-канал${ch?` · ${ch}`:""}`,
     title:jt||firstLine(p.text)||(isDigest?"Подборка вакансий":"Вакансия"),
     desc:stripPromo(p.text)||"—",
