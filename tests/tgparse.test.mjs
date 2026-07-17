@@ -3,8 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { parseTgJob } = require("../tgparse.js");
-const { extractSkills } = createRequire(import.meta.url)("../tgparse.js");
+const { parseTgJob, extractSkills } = require("../tgparse.js");
 
 test("«роль в Компания» — вытаскивает и должность, и компанию", () => {
   const r = parseTgJob("QA Engineer (Data Stack) в Exness\n\nРебята активно ищут", []);
