@@ -185,7 +185,12 @@ function brandFrom(lines) {
 
 // Слова, по которым строка опознаётся как должность. Без единого совпадения
 // строку заголовком не считаем — иначе в заголовок лезет «Всем привет!».
-const ROLE_HINT = /(разработчик|инженер|менеджер|дизайнер|аналитик|директор|руководител|специалист|тимлид|маркетолог|редактор|копирайтер|продюсер|таргетолог|рекрутер|бухгалтер|юрист|тестировщик|стажёр|стажер|ассистент|developer|engineer|manager|designer|analyst|architect|specialist|lead|head\s+of|director|officer|marketer|writer|editor|producer|recruiter|intern|owner|smm|seo|qa|devops|pm\b|po\b|cto|ceo|cmo|cpo)/iu;
+// Расширено в Задаче 6: словарь терял ~28 постов на настоящих должностях —
+// «программист», «координатор», «оператор», «креатор», «администратор»,
+// «куратор», «лидер», «оценщик», «сборщик» и англоязычные scientist, buyer,
+// associate, ambassador, representative, translator, builder, partner,
+// creator (канал remocate терял title в 7 из 28 постов именно из-за этого).
+const ROLE_HINT = /(разработчик|инженер|менеджер|дизайнер|аналитик|директор|руководител|специалист|тимлид|маркетолог|редактор|копирайтер|продюсер|таргетолог|рекрутер|бухгалтер|юрист|тестировщик|стажёр|стажер|ассистент|программист|координатор|оператор|креатор|администратор|куратор|лидер|оценщик|сборщик|developer|engineer|manager|designer|analyst|architect|specialist|lead|head\s+of|director|officer|marketer|writer|editor|producer|recruiter|intern|owner|scientist|buyer|associate|ambassador|representative|translator|builder|partner|creator|smm|seo|qa|devops|pm\b|po\b|cto|ceo|cmo|cpo)/iu;
 const T_LABEL = /^(?:вакансия|должность|позиция|position|role)\s*[:—-]\s*(.*)$/iu;
 // \b тут не годится: JS-регэкспы считают word-символами только [A-Za-z0-9_],
 // граница перед кириллическим «ищет» после пробела не находится (см. похожий
