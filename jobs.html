@@ -863,7 +863,10 @@ function cardTg(p){
   // Чипы — стек и навыки из текста поста (роли остаются тегами для фильтров слева).
   // Дайджест — список из нескольких разных вакансий: extractSkills собрал бы
   // скиллы вперемешку из чужих постов, поэтому для дайджестов чипы навыков не рендерим.
-  const tags=salPill(p)+metaPills([...fmt, ...grade])+(isDigest?"":skillChips(extractSkills(p.text)));
+  // company передаём вторым аргументом (Задача 6): совпадение навыка внутри
+  // имени компании/продукта («Яндекс Go», «AI-продукт Джени») не должно
+  // давать чип — extractSkills маскирует company перед поиском.
+  const tags=salPill(p)+metaPills([...fmt, ...grade])+(isDigest?"":skillChips(extractSkills(p.text, company)));
   const exc=tgExcerpt(p.text, title) || "Подробности — на странице вакансии.";
   return `<div class="post" data-kind="tg" data-id="${p._id}" data-link="${esc(p.link)}">
     <div class="ptop">${avatarTg(company)}

@@ -13,7 +13,10 @@ for (const p of posts) {
   const r = parseTgJob(p.text, p.tags);
   if (r.company) co++;
   if (r.title) ti++;
-  if (extractSkills(p.text).length) sk++;
+  // company передаём вторым аргументом (Задача 6) — как и в jobs.html,
+  // чтобы метрика отражала реальное поведение продакшена (без шума вида
+  // «Яндекс Go» → навык go).
+  if (extractSkills(p.text, r.company).length) sk++;
   if (!r.company && coMisses.length < 15) coMisses.push(p.text.split("\n")[0].slice(0, 80));
   // Промахи по должности — та же логика, что и у компании: первая строка
   // поста как ориентир, где искать причину (нужна для итерации по ROLE_HINT).
