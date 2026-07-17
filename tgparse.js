@@ -475,5 +475,5 @@ function extractSkills(text, company) {
 
 // Экспорт: в браузере функции уже глобальны, в Node — через module.exports.
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { parseTgJob, cleanCo, extractSkills };
+  module.exports = { parseTgJob, extractSkills };
 }
