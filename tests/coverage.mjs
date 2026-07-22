@@ -12,10 +12,10 @@ for (const p of posts) {
   const r = parseTgJob(p.text, p.tags);
   if (r.company) co++;
   if (r.title) ti++;
-  // Навыки считаем так же, как их показывает карточка: у дайджестов cardTg
-  // чипы не рендерит (навыки в них перемешаны из разных вакансий), поэтому
-  // такие посты не входят ни в числитель, ни в знаменатель. Company передаём
-  // вторым аргументом — как в jobs.html, иначе «Яндекс Go» даст навык go.
+  // Навыки считаем так же, как их показывает карточка: дайджесты (подборки из
+  // нескольких вакансий) в ленту не попадают — looksLikeVacancy их отсеивает,
+  // поэтому такие посты не входят ни в числитель, ни в знаменатель. Company
+  // передаём вторым аргументом — как в jobs.html, иначе «Яндекс Go» даст навык go.
   if (!(p.tags || []).includes("Дайджест")) {
     skCards++;
     if (extractSkills(p.text, r.company).length) sk++;
@@ -27,7 +27,7 @@ const pct = (n, d) => `${((n / d) * 100).toFixed(1)}%`;
 console.log(`постов: ${posts.length}`);
 console.log(`компания: ${co} (${pct(co, posts.length)})`);
 console.log(`должность: ${ti} (${pct(ti, posts.length)})`);
-console.log(`навыки: ${sk}/${skCards} (${pct(sk, skCards)}) — без дайджестов, им чипы не рисуем`);
+console.log(`навыки: ${sk}/${skCards} (${pct(sk, skCards)}) — без дайджестов, они в ленту не попадают`);
 console.log("\nбез компании (первые 15):");
 for (const m of coMisses) console.log("  ·", m);
 console.log("\nбез должности (первые 15):");
