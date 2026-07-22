@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
-const { parseTgJob, extractSkills } = createRequire(import.meta.url)("../tgparse.js");
+const { parseTgJob, extractSkills, isDigestPost, isResumePost } = createRequire(import.meta.url)("../tgparse.js");
 const posts = JSON.parse(readFileSync(new URL("../data/job_feed.json", import.meta.url)));
 
 let co = 0, ti = 0, sk = 0, skCards = 0;
@@ -12,11 +12,15 @@ for (const p of posts) {
   const r = parseTgJob(p.text, p.tags);
   if (r.company) co++;
   if (r.title) ti++;
-  // Навыки считаем так же, как их показывает карточка: дайджесты (подборки из
-  // нескольких вакансий) в ленту не попадают — looksLikeVacancy их отсеивает,
-  // поэтому такие посты не входят ни в числитель, ни в знаменатель. Company
-  // передаём вторым аргументом — как в jobs.html, иначе «Яндекс Go» даст навык go.
-  if (!(p.tags || []).includes("Дайджест")) {
+  // Навыки считаем так же, как их показывает карточка: подборки (isDigestPost)
+  // и резюме соискателей (isResumePost) в ленту не попадают — looksLikeVacancy
+  // в jobs.html отсеивает их этими же функциями, а не тегом «Дайджест» (Находка
+  // 3, повторное ревью: тег ставится эвристикой скрейпера «5+ ролевых слов» и
+  // висит на обычных длинных вакансиях — доверять ему после этого нельзя нигде,
+  // включая замер охвата). Такие посты не входят ни в числитель, ни в
+  // знаменатель. Company передаём вторым аргументом — как в jobs.html, иначе
+  // «Яндекс Go» даст навык go.
+  if (!isDigestPost(p.text) && !isResumePost(p.text)) {
     skCards++;
     if (extractSkills(p.text, r.company).length) sk++;
   }
@@ -27,7 +31,7 @@ const pct = (n, d) => `${((n / d) * 100).toFixed(1)}%`;
 console.log(`постов: ${posts.length}`);
 console.log(`компания: ${co} (${pct(co, posts.length)})`);
 console.log(`должность: ${ti} (${pct(ti, posts.length)})`);
-console.log(`навыки: ${sk}/${skCards} (${pct(sk, skCards)}) — без дайджестов, они в ленту не попадают`);
+console.log(`навыки: ${sk}/${skCards} (${pct(sk, skCards)}) — без подборок и резюме, они в ленту не попадают`);
 console.log("\nбез компании (первые 15):");
 for (const m of coMisses) console.log("  ·", m);
 console.log("\nбез должности (первые 15):");
