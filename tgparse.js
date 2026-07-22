@@ -473,7 +473,23 @@ function extractSkills(text, company) {
   return SKILL_RX.filter(([, rx]) => rx.test(t)).map(([name]) => name);
 }
 
+// Пост-резюме соискателя, а не вакансия: канал jobster_resume и подобные
+// публикуют анкеты людей, ищущих работу, с их личными контактами. Признаки
+// структурные (заголовок-рубрика, контакты, анкетные поля), а не тематические:
+// слово «резюме» само по себе встречается и в вакансиях («присылайте резюме»),
+// поэтому одного признака мало — требуем два из трёх.
+const RESUME_HEAD = /^\s*[^\p{L}\n]{0,4}(?:резюме|cv)\s*[:—-]/iu;
+const RESUME_CONTACT = /(?:^|\n)\s*(?:ник\s*(?:tg|телеграм)|номер\s+телефона|телефон|email|почта)\s*[:—-]/iu;
+const RESUME_FIELDS = /(?:^|\n)\s*(?:возраст|формат\s*\/\s*локация|опыт\s+работы|о\s+себе|обо\s+мне)\s*[:—-]/iu;
+
+function isResumePost(text) {
+  const t = String(text || "");
+  if (!t) return false;
+  const hits = [RESUME_HEAD, RESUME_CONTACT, RESUME_FIELDS].filter(rx => rx.test(t)).length;
+  return hits >= 2;
+}
+
 // Экспорт: в браузере функции уже глобальны, в Node — через module.exports.
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { parseTgJob, extractSkills };
+  module.exports = { parseTgJob, extractSkills, isResumePost };
 }

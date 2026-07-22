@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { parseTgJob, extractSkills } = require("../tgparse.js");
+const { parseTgJob, extractSkills, isResumePost } = require("../tgparse.js");
 
 test("«роль в Компания» — вытаскивает и должность, и компанию", () => {
   const r = parseTgJob("QA Engineer (Data Stack) в Exness\n\nРебята активно ищут", []);
@@ -724,4 +724,29 @@ test("extractSkills без company — поведение не меняется 
     extractSkills("4+ года опыта, SQL, Python, опыт в fintech и AI-агентах. Kafka, Docker."),
     ["python", "sql", "kafka", "docker", "ai", "fintech"],
   );
+});
+
+// Задача 1: посты-резюме соискателей (канал jobster_resume и подобные)
+// нужно отличать от вакансий, чтобы не показывать в ленте личные контакты
+// людей вместе с их анкетами.
+test("резюме соискателя опознаётся", () => {
+  const t = "Резюме: Head of Customer Operations / Руководитель клиентских операций\n\n" +
+    "🧑‍💻 Сергей Рыбачек\nНик tg: @rybacheque\nНомер телефона: +7-985-474-31-67\n" +
+    "Email: rybacheque@gmail.com\n\nВозраст: 31\nФормат/Локация: Москва - Офис; Гибрид; Удаленка";
+  assert.equal(isResumePost(t), true);
+});
+
+test("вакансия, где просят прислать резюме, — не резюме", () => {
+  const t = "🔎 Рекрутер\n\nМы \"VICTORY group\" являемся одним из лидирующих рекламных агентств России.\n\n" +
+    "📎 Обязанности:\n • Массовый подбор персонала;\n • Поиск резюме на JOB-ресурсах, обработка откликов\n" +
+    "Резюме присылайте на почту hr@victory.ru";
+  assert.equal(isResumePost(t), false);
+});
+
+test("одного заголовка «Резюме:» без анкеты мало", () => {
+  assert.equal(isResumePost("Резюме: Маркетолог\n\nПодробности по ссылке."), false);
+});
+
+test("пустой текст — не резюме", () => {
+  assert.equal(isResumePost(""), false);
 });
