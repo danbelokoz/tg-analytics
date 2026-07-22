@@ -1022,7 +1022,13 @@ const BACK = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" fill="
 function detailModel(p){
   const grade=(p.tags||[]).filter(t=>GRADE.has(t));
   const fmt=(p.tags||[]).filter(t=>FMT.has(t));
-  const skills=(p.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t));
+  // Находка 2 (повторное ревью): «Дайджест» — тег скрейпера, которому лента уже
+  // не верит (looksLikeVacancy решает через isDigestPost, см. tgparse.js), и
+  // одноимённого фильтра в сайдбаре нет (см. G_OTHER выше). Раз ни лента, ни
+  // фильтры этому тегу не доверяют, показывать его чипом в «Метках» на странице
+  // вакансии тоже не нужно — он вводит в заблуждение (пост уже прошёл проверку
+  // как обычная вакансия, а чип продолжает называть его подборкой).
+  const skills=(p.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t)&&t!=="Дайджест");
   if(p._src==="Компании"){
     const ats=ATS_NAME[p.ats]||p.ats||"";
     return {
