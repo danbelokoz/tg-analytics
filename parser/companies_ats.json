@@ -77,6 +77,12 @@
     "token": "stackblitz"
   },
   {
+    "slug": "c-teleport",
+    "name": "C Teleport",
+    "ats": "teamtailor",
+    "token": "cteleport"
+  },
+  {
     "slug": "candid-health",
     "name": "Candid Health",
     "ats": "ashby",
@@ -209,6 +215,12 @@
     "name": "Easybrain",
     "ats": "lever",
     "token": "easybrain"
+  },
+  {
+    "slug": "ecommpay",
+    "name": "Ecommpay",
+    "ats": "teamtailor",
+    "token": "ecommpay"
   },
   {
     "slug": "elevenlabs",
@@ -675,6 +687,12 @@
     "token": "stripe"
   },
   {
+    "slug": "sumsub",
+    "name": "Sumsub",
+    "ats": "teamtailor",
+    "token": "sumsub"
+  },
+  {
     "slug": "suno",
     "name": "Suno",
     "ats": "ashby",
@@ -733,6 +751,12 @@
     "name": "Tines",
     "ats": "greenhouse",
     "token": "tines"
+  },
+  {
+    "slug": "tradingview",
+    "name": "TradingView",
+    "ats": "teamtailor",
+    "token": "tradingview"
   },
   {
     "slug": "twilio",

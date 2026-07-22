@@ -395,6 +395,7 @@ const RU_ROOTS = new Set([
   "yandex","nebius","clickhouse","plata",
   // компании с офисами и наймом в СНГ — из подборки владельца:
   "chocofamily","easybrain","gopuff","joom","lightspeed","tbc-bank","veeam",
+  "c-teleport","ecommpay","sumsub","tradingview",
   // известные RU-rooted — на случай появления в сиде:
   "jetbrains","miro","semrush","revolut","nginx","gett","luxoft","playrix",
   "wargaming","indrive","ozon","wildberries","kaspersky","aviasales","selectel",
@@ -428,7 +429,7 @@ const GROUPS = [
   ["Грейд", G_GRADE], ["Занятость", G_EMPLOY], ["Прочее", G_OTHER],
 ];
 const SRC = new Set(SRC_CATS), FMT = new Set(G_FMT), GRADE = new Set(G_GRADE);
-const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable", workday:"Workday", yandex:"yandex.ru/jobs"};
+const ATS_NAME = {greenhouse:"Greenhouse", lever:"Lever", ashby:"Ashby", smartrecruiters:"SmartRecruiters", workable:"Workable", workday:"Workday", teamtailor:"Teamtailor", yandex:"yandex.ru/jobs"};
 
 let data = [], active = new Set(), sortNewest = true;
 // Вид ленты: карточки-блоки (по умолчанию) или компактный список строк. Запоминаем в браузере.

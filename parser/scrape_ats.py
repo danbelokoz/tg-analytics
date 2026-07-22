@@ -3,8 +3,8 @@
 TG Jobs — коннектор career-сайтов компаний (продукт 3: «Сайты работы»).
 
 Тянет вакансии напрямую из ОФИЦИАЛЬНЫХ публичных job-board API их ATS
-(Greenhouse / Lever / Ashby / SmartRecruiters / Workable) — это встраиваемые
-API для витрин вакансий, а не парсинг чужого агрегатора. Список компаний и их
+(Greenhouse / Lever / Ashby / SmartRecruiters / Workable / Teamtailor) — это
+встраиваемые API для витрин вакансий, а не парсинг чужого агрегатора. Список компаний и их
 ATS-токены — в parser/companies_ats.json (см. как собирался: probe по слагам).
 
 РФ-доступность: сбор идёт здесь, в CI. Браузер пользователя грузит только наш
@@ -370,6 +370,47 @@ def fetch_workable(c):
     return out
 
 
+def _tt_location(jp):
+    """Место работы из schema.org-разметки Teamtailor: «Лимасол, CY».
+
+    Мест может быть несколько (вакансия на два офиса) — склеиваем через « / ».
+    У части вакансий адреса нет вовсе: тогда формат определится по тайтлу.
+    """
+    places = jp.get("jobLocation") or []
+    if isinstance(places, dict):
+        places = [places]
+    out = []
+    for p in places:
+        a = (p or {}).get("address") or {}
+        s = ", ".join(x for x in [a.get("addressLocality"), a.get("addressCountry")] if x)
+        if s and s not in out:
+            out.append(s)
+    return " / ".join(out)
+
+
+def fetch_teamtailor(c):
+    """Teamtailor отдаёт витрину вакансий JSON-фидом /jobs.json без ключа.
+
+    Полей меньше, чем у остальных ATS: нет отдела и признака удалёнки, зато есть
+    вложенная schema.org-разметка (_jobposting) с адресами и датой публикации.
+    """
+    d = _get_json(f"https://{c['token']}.teamtailor.com/jobs.json")
+    out = []
+    for j in (d.get("items") or [])[:MAX_PER_COMPANY]:
+        jp = j.get("_jobposting") or {}
+        loc = _tt_location(jp)
+        ext = ((jp.get("identifier") or {}).get("value")) or j.get("id")
+        desc = j.get("content_html") or jp.get("description") or ""
+        title = (j.get("title") or "").strip()
+        # Признака удалёнки в фиде нет. Когда адреса тоже нет, формат обычно
+        # вынесен в само название — «Customer Support Agent (Remote)».
+        out.append(_rec(c["name"], c["slug"], "teamtailor", ext,
+                        title, loc, work_format(loc or title),
+                        None, j.get("url"),
+                        j.get("date_published") or jp.get("datePosted"), desc))
+    return out
+
+
 # ── Яндекс (свой career-сайт, публичный API «publications») ───────────────────
 # Не ATS в привычном смысле, а собственный публичный job-board API Яндекса
 # (yandex.ru/jobs/api/publications — тот же, что дёргает их фронт). Отдаёт JSON,
@@ -440,6 +481,7 @@ FETCH = {
     "smartrecruiters": fetch_smartrecruiters,
     "workable": fetch_workable,
     "workday": fetch_workday,
+    "teamtailor": fetch_teamtailor,
     "yandex": fetch_yandex,
 }
 
