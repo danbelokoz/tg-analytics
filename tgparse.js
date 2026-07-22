@@ -392,6 +392,31 @@ function isJobDigest(lines) {
   return entries.length >= 3;
 }
 
+// Маркер-рубрика в шапке поста: канал прямо объявляет подборку. Это точная
+// часть правила _DIGEST из parser/scrape_posts.py, перенесённая на клиент.
+// Ошибочно в скрейпере соседнее условие «5+ ролевых слов в тексте» — оно вешает
+// тег «Дайджест» на длинные обычные вакансии, поэтому на клиент не переносится
+// и самому тегу лента больше не верит.
+const DIGEST_MARK = /#дайджест|дайджест\s+ваканс|подборка\s+ваканс|вакансии\s+недели|кого\s+ищут|лучшее\s+за\s+неделю|топ\s+(?:открытых\s+)?(?:позиц|ваканс)/i;
+// Буллит-список ролей под абзацем о компании («• Senior Growth Product Manager»)
+// — форма подборки, где у строк нет вида «роль в компания» (канал young_relocate).
+const DIGEST_BULLET = /^[•·▪]\s*\S/;
+
+// Пост — подборка многих вакансий: либо канал объявил это рубрикой (DIGEST_MARK),
+// либо структура выдаёт список (isJobDigest / буллиты). Одна карточка обещает одну
+// вакансию, поэтому подборки в ленту не берём.
+function isDigestPost(text) {
+  const lines = String(text || "").split("\n").map(s => s.trim()).filter(Boolean);
+  if (lines.length < 4) return false;
+  if (isJobDigest(lines.slice(0, 8))) return true;
+  if (!DIGEST_MARK.test(lines.slice(0, 2).join(" "))) return false;
+  // Маркер сам по себе не приговор: он встречается и в подписи-навигации под
+  // обычной вакансией. Требуем ещё и список — буллиты либо строки-пункты.
+  const bullets = lines.filter(ln => DIGEST_BULLET.test(ln)).length;
+  const entries = lines.slice(1).filter(ln => DIGEST_ENTRY.test(ln.replace(/^[^\p{L}\p{N}]+/u, ""))).length;
+  return bullets >= 3 || entries >= 2;
+}
+
 function parseTgJob(text, tags) {
   if (!text) return {};
   const lines = text.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 8);
@@ -491,5 +516,5 @@ function isResumePost(text) {
 
 // Экспорт: в браузере функции уже глобальны, в Node — через module.exports.
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { parseTgJob, extractSkills, isResumePost };
+  module.exports = { parseTgJob, extractSkills, isResumePost, isDigestPost };
 }
