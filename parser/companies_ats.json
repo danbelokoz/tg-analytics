@@ -107,6 +107,12 @@
     "token": "character"
   },
   {
+    "slug": "chocofamily",
+    "name": "Chocofamily",
+    "ats": "ashby",
+    "token": "choco"
+  },
+  {
     "slug": "clickhouse",
     "name": "ClickHouse",
     "ats": "greenhouse",
@@ -199,6 +205,12 @@
     "token": "discord"
   },
   {
+    "slug": "easybrain",
+    "name": "Easybrain",
+    "ats": "lever",
+    "token": "easybrain"
+  },
+  {
     "slug": "elevenlabs",
     "name": "Elevenlabs",
     "ats": "ashby",
@@ -253,6 +265,12 @@
     "token": "deepmind"
   },
   {
+    "slug": "gopuff",
+    "name": "GoPuff",
+    "ats": "lever",
+    "token": "gopuff"
+  },
+  {
     "slug": "harvey",
     "name": "Harvey",
     "ats": "ashby",
@@ -275,6 +293,12 @@
     "name": "Jasper",
     "ats": "workable",
     "token": "jasper"
+  },
+  {
+    "slug": "joom",
+    "name": "Joom",
+    "ats": "smartrecruiters",
+    "token": "joom"
   },
   {
     "slug": "k2-space-corporation",
@@ -317,6 +341,12 @@
     "name": "Legora",
     "ats": "ashby",
     "token": "legora"
+  },
+  {
+    "slug": "lightspeed",
+    "name": "Lightspeed",
+    "ats": "ashby",
+    "token": "lightspeedhq"
   },
   {
     "slug": "linear",
@@ -663,6 +693,12 @@
     "token": "synthesia"
   },
   {
+    "slug": "tbc-bank",
+    "name": "TBC Bank",
+    "ats": "smartrecruiters",
+    "token": "tbcbank"
+  },
+  {
     "slug": "teikametrics",
     "name": "Teikametrics",
     "ats": "lever",
@@ -711,6 +747,12 @@
     "token": "vapi"
   },
   {
+    "slug": "veeam",
+    "name": "Veeam",
+    "ats": "greenhouse",
+    "token": "veeamsoftware"
+  },
+  {
     "slug": "vercel",
     "name": "Vercel",
     "ats": "greenhouse",
@@ -721,6 +763,12 @@
     "name": "Verkor",
     "ats": "lever",
     "token": "verkor"
+  },
+  {
+    "slug": "wargaming",
+    "name": "Wargaming",
+    "ats": "greenhouse",
+    "token": "wargamingen"
   },
   {
     "slug": "waymo",
