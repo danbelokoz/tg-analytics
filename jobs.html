@@ -404,7 +404,8 @@ const G_STACK = ["Python","JS/TS","Java","PHP","Go",".NET/C#","1C"];
 const G_FMT   = ["Удалёнка","Гибрид","Офис","Релокация"];
 const G_GRADE = ["Junior","Middle","Senior","Lead"];
 const G_EMPLOY= ["Стажировка","Фриланс","Part-time"];
-const G_OTHER = ["З/п указана","Дайджест"];
+// «Дайджест» фильтром не предлагаем: подборки отсеиваются в looksLikeVacancy и в ленту не попадают.
+const G_OTHER = ["З/п указана"];
 // Диапазоны зарплат (₽/мес). Маркер SAL_MARK в GROUPS рисует особый блок (не теги).
 const SAL_MARK = "__SAL__";
 const SRC_MARK = "__SRC__";   // маркер блока карточек-источников в GROUPS
@@ -552,8 +553,24 @@ function benchEstimate(tags, bench, round, factor){
   const mid=base*mult*(factor||1), sp=bench.spread, r=round||5000;
   return [Math.round(mid*(1-sp)/r)*r, Math.round(mid*(1+sp)/r)*r];
 }
-// RU/TG: оценка ₽/мес (Habr Career).
-function estimateSalary(p){ return benchEstimate(p.tags, SAL_BENCH, 5000); }
+// Пост про российский рынок? Бенчмарк SAL_BENCH — это Habr Career, ₽/мес по РФ, и
+// применять его к вакансии Airbnb в Ireland/UK нельзя: «≈165–260k ₽» там просто
+// неправда. Каналы публикуют и зарубежные вакансии — их отличаем по языку поста:
+// доля кириллицы <15% = текст английский (порог взят по данным ленты — в диапазоне
+// 15–35% лежат короткие RU-посты вида «Senior fullstack java developer / от 200 000 ₽»).
+// Сумма в рублях — сама по себе достаточный признак РФ-рынка.
+const RUB_RE = /₽|руб/i;
+function isRuMarket(p){
+  const text=p.text||"";
+  if(RUB_RE.test(text)) return true;
+  const letters=text.match(/\p{L}/gu)||[];
+  if(!letters.length) return true;                    // нет букв — не с чем спорить, ведём себя как раньше
+  const cyr=letters.filter(c=>/[а-яё]/i.test(c)).length;
+  return cyr/letters.length >= 0.15;
+}
+// RU/TG: оценка ₽/мес (Habr Career). Для зарубежных постов оценки нет — лучше
+// пустая пилюля, чем уверенно показанная неверная вилка.
+function estimateSalary(p){ return isRuMarket(p) ? benchEstimate(p.tags, SAL_BENCH, 5000) : null; }
 // ATS/US: оценка оклада (levels.fyi), в МЕСЯЦ ($/мес). Только для US-локаций;
 // масштаб по тиру работодателя (A — топ, C — space/hardware/gamedev; по умолч. B).
 // Бенчмарк задан годовым окладом → делим на 12.
@@ -641,15 +658,11 @@ function badge(name, fallbackHue, logoSlug){
 }
 // Значок Telegram — inline-SVG: никаких внешних запросов, грузится из РФ.
 const TG_ICON = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9.8 15.6 9.6 19c.4 0 .6-.2.8-.4l2-1.9 4.1 3c.8.4 1.3.2 1.5-.7l2.7-12.6c.3-1.1-.4-1.6-1.1-1.3L2.9 10.4c-1.1.4-1.1 1-.2 1.3l4.3 1.3 10-6.3c.5-.3.9-.1.5.2l-7.7 7z"/></svg>`;
-// Аватар TG-карточки: логотип компании, если он у нас есть; иначе — значок Telegram.
-function avatarTg(company){
-  const slug = company ? slugOf(company) : null;
-  if (slug && LOGOS.has(slug)) return badge(company, hueOf(slug), slug);
-  return `<div class="ava tg">${TG_ICON}</div>`;
-}
-// Слаг компании для сопоставления с logos/*.png («Cloud.ru» → «cloud-ru»).
-const slugOf = s => String(s || "").toLowerCase().trim()
-  .replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
+// Аватар TG-карточки — ВСЕГДА значок Telegram, даже если пост про известный бренд.
+// Логотип компании тут показывать нельзя: перепечатка вакансии Airbnb в канале
+// становится неотличима от карточки с career-сайта (лого + имя бренда), и фильтр
+// «Источник → Telegram» выглядит сломанным. Лого — признак карточек «Компании» (avatarCo).
+const avatarTg = () => `<div class="ava tg">${TG_ICON}</div>`;
 
 function timeAgo(iso){
   if(!iso) return "";
@@ -856,20 +869,19 @@ function cardTg(p){
   const grade=(p.tags||[]).filter(t=>GRADE.has(t));
   const fmt=(p.tags||[]).filter(t=>FMT.has(t));
   const {title:jobTitle, company} = parseTgJob(p.text, p.tags);
-  const isDigest=(p.tags||[]).includes("Дайджест");
-  const title = jobTitle || firstLine(p.text) || (isDigest?"Подборка вакансий":"Вакансия");
-  // Имя канала в карточке не показываем: либо работодатель, либо общая подпись.
-  const srcName = company || "Из TG-каналов";
+  const title = jobTitle || firstLine(p.text) || "Вакансия";
+  // Подпись всегда общая: в карточке нет места объяснить, что «Airbnb» — это пост
+  // из канала, а не вакансия с их career-сайта. Работодатель виден на странице
+  // вакансии, где рядом явно написан канал-источник.
+  const srcName = "Из TG-каналов";
   // Чипы — стек и навыки из текста поста (роли остаются тегами для фильтров слева).
-  // Дайджест — список из нескольких разных вакансий: extractSkills собрал бы
-  // скиллы вперемешку из чужих постов, поэтому для дайджестов чипы навыков не рендерим.
   // company передаём вторым аргументом (Задача 6): совпадение навыка внутри
   // имени компании/продукта («Яндекс Go», «AI-продукт Джени») не должно
   // давать чип — extractSkills маскирует company перед поиском.
-  const tags=salPill(p)+metaPills([...fmt, ...grade])+(isDigest?"":skillChips(extractSkills(p.text, company)));
+  const tags=salPill(p)+metaPills([...fmt, ...grade])+skillChips(extractSkills(p.text, company));
   const exc=tgExcerpt(p.text, title) || "Подробности — на странице вакансии.";
   return `<div class="post" data-kind="tg" data-id="${p._id}" data-link="${esc(p.link)}">
-    <div class="ptop">${avatarTg(company)}
+    <div class="ptop">${avatarTg()}
       <span class="src-name">${esc(srcName)}</span>
       <span class="ptime">${timeAgo(p.posted_at)}</span>${EYE}
     </div>
@@ -1018,12 +1030,13 @@ function detailModel(p){
     };
   }
   const {title:jt, company:co}=parseTgJob(p.text,p.tags);
-  const isDigest=(p.tags||[]).includes("Дайджест");
   const ch=p.username?"@"+esc(p.username):esc(p.channel_title||"");
+  // Здесь имя работодателя показать можно: строкой ниже явно написано «Telegram-канал · @канал»,
+  // так что происхождение не спутать (в компактной карточке такого места нет — см. cardTg).
   return {
-    ava:avatarTg(co), company:co||"Из TG-каналов",
+    ava:avatarTg(), company:co||"Из TG-каналов",
     source:`Telegram-канал${ch?` · ${ch}`:""}`,
-    title:jt||firstLine(p.text)||(isDigest?"Подборка вакансий":"Вакансия"),
+    title:jt||firstLine(p.text)||"Вакансия",
     desc:stripPromo(p.text)||"—",
     meta:metaPills([...fmt,...grade]), skills, apply:p.link,
   };
@@ -1096,7 +1109,10 @@ const CITY_RE = /работа\s+в[оo]?\s+[А-ЯЁ]/gi;
 function looksLikeVacancy(p){
   const tags=p.tags||[], text=p.text||"";
   if(NAV_RE.test(text) || (text.match(CITY_RE)||[]).length>=3) return false;  // оглавление/меню канала
-  if(tags.includes("Дайджест")) return true;            // подборки вакансий оставляем
+  // Дайджест — подборка из 8+ РАЗНЫХ вакансий в одном посте. Карточка обещает одну
+  // вакансию: заголовок, вилка и «Откликнуться» относились бы к случайной строке
+  // подборки. Одна карточка = одна вакансия, поэтому подборки в ленту не берём.
+  if(tags.includes("Дайджест")) return false;
   const strong=VAC_RE.test(text);
   if(ADV_RE.test(text) && !STRUCT_VAC.test(text)) return false;  // реклама/курсы/контент без СТРУКТУРНОГО маркера найма
   // Лучше отсечь лишнее, чем пропустить мусор: роль засчитываем как вакансию только
