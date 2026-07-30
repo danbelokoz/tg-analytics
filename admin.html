@@ -16,6 +16,9 @@ header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px}
 .brand i{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,#2AABEE,#6366f1);display:inline-flex;
   align-items:center;justify-content:center;font-style:normal;color:#fff;font-size:12px}
+.brand{text-decoration:none;color:inherit}
+.navlink{font-weight:700;font-size:13.5px;color:#6b6f7e;text-decoration:none;transition:.13s}
+.navlink:hover{color:var(--ink)}
 .who{margin-left:auto;font-size:13px;color:var(--muted);font-weight:600}
 .who b{color:var(--ink)}
 .btn{padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);font:800 12.5px 'Manrope';
@@ -59,7 +62,9 @@ td .pill{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px}
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><i>◈</i> Telemetria</div>
+    <a class="brand" href="/index.html"><i>◈</i> Telemetria</a>
+    <a class="navlink" href="/index.html">Каталог</a>
+    <a class="navlink" href="/jobs.html">Лента вакансий</a>
     <span class="who" id="who"></span>
     <button class="btn" id="refresh">Обновить</button>
     <button class="btn" id="logout">Выйти</button>
@@ -86,7 +91,7 @@ function ago(iso) {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 function statusCard(run, key) {
-  const meta = run && (WF[key] || { label: key, note: "", unit: "записей" });
+  const meta = WF[key] || { label: key, note: "", unit: "записей" };
   if (!run) return `<div class="scard"><div class="top"><span class="dot na"></span>
       <h3>${meta.label}</h3><span class="badge na">нет данных</span></div>
       <div class="when">—<small>прогонов ещё не было</small></div></div>`;
@@ -121,32 +126,58 @@ function historyRow(r) {
   </tr>`;
 }
 
-async function load() {
-  // 1) кто я
-  const me = await fetch("/api/me").then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  if (!me) { location.href = "/login"; return; }
-  $("who").innerHTML = `<b>${esc(me.email)}</b> · ${esc(me.role)}`;
-  if (me.role !== "admin") {
-    $("root").innerHTML = `<div class="state">Доступ к мониторингу только у администраторов.<br>Ваша роль: ${esc(me.role)}.</div>`;
-    return;
+// fetch JSON с таймаутом — чтобы страница НИКОГДА не висла на «Загрузка…»
+// (медленный/уснувший Supabase, зависший запрос): по таймауту вернём null.
+async function fetchJSON(url, ms = 12000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal });
+    return r.ok ? await r.json() : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(t);
   }
-  // 2) статус
-  const st = await fetch("/api/status").then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  if (!st) { $("root").innerHTML = `<div class="state">Не удалось загрузить статус.</div>`; return; }
+}
 
-  const byWf = {};
-  for (const run of st.latest) byWf[run.workflow] = run;
-  const cards = ["tg", "sites"].map((k) => statusCard(byWf[k], k)).join("");
-  const history = st.history.slice(0, 40).map(historyRow).join("");
+async function load() {
+  try {
+    // 1) кто я
+    const me = await fetchJSON("/api/me");
+    if (!me) { location.href = "/login"; return; }
+    $("who").innerHTML = `<b>${esc(me.email)}</b> · ${esc(me.role)}`;
+    if (me.role !== "admin") {
+      $("root").innerHTML = `<div class="state">Доступ к мониторингу только у администраторов.<br>Ваша роль: ${esc(me.role)}.</div>`;
+      return;
+    }
+    // 2) статус
+    const st = await fetchJSON("/api/status");
+    if (!st) {
+      $("root").innerHTML = `<div class="state">Не удалось загрузить статус.<br>
+        Проверьте, что в Supabase создана таблица <b>pipeline_runs</b> (schema_admin.sql).</div>`;
+      return;
+    }
+    const latest = Array.isArray(st.latest) ? st.latest : [];
+    const runs = Array.isArray(st.history) ? st.history : [];
+    const byWf = {};
+    for (const run of latest) byWf[run.workflow] = run;
+    const cards = ["tg", "sites"].map((k) => statusCard(byWf[k], k)).join("");
+    const history = runs.slice(0, 40).map(historyRow).join("");
 
-  $("root").innerHTML = `
-    <h1>Мониторинг сбора</h1>
-    <div class="hint">Когда и как прошёл последний сбор вакансий по каждому источнику.</div>
-    <div class="cards">${cards}</div>
-    <div class="sec">История прогонов</div>
-    ${st.history.length
-      ? `<table><thead><tr><th>Время</th><th>Источник</th><th>Статус</th><th>Собрано</th><th>Упало</th><th>Заметка</th></tr></thead><tbody>${history}</tbody></table>`
-      : `<div class="state">Прогонов ещё не было — появятся после ближайшего запуска скрейпера.</div>`}`;
+    $("root").innerHTML = `
+      <h1>Мониторинг сбора</h1>
+      <div class="hint">Когда и как прошёл последний сбор вакансий по каждому источнику.</div>
+      <div class="cards">${cards}</div>
+      <div class="sec">История прогонов</div>
+      ${runs.length
+        ? `<table><thead><tr><th>Время</th><th>Источник</th><th>Статус</th><th>Собрано</th><th>Упало</th><th>Заметка</th></tr></thead><tbody>${history}</tbody></table>`
+        : `<div class="state">Прогонов ещё не было — появятся после ближайшего запуска скрейпера.<br>
+           Запустить вручную: GitHub → Actions → «Jobs — TG feed» → Run workflow.</div>`}`;
+  } catch (e) {
+    // Любая ошибка рендера больше не оставляет «Загрузку» навсегда — показываем причину.
+    $("root").innerHTML = `<div class="state">Ошибка загрузки: ${esc(e && e.message || e)}</div>`;
+  }
 }
 
 $("refresh").onclick = load;
