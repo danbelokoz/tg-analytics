@@ -19,6 +19,14 @@ header{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom
 .nav .active{font-weight:800;color:#18181f;font-size:13.5px}
 .nav .cta{margin-left:auto;background:#18181f;color:#fff;border:none;border-radius:9px;padding:9px 18px;font:700 13px 'Manrope';cursor:pointer;transition:.15s}
 .nav .cta:hover{background:#2b2b36}
+/* Аккаунт в шапке: «Войти» (гость) либо e-mail + «Выйти» (+ «Админка» для admin). */
+.acct{display:flex;align-items:center;gap:12px}
+.acct-login{border:1px solid #dcdee5;background:#fff;color:#18181f;font:800 13px 'Manrope';padding:8px 16px;border-radius:10px;text-decoration:none;transition:.15s}
+.acct-login:hover{border-color:#18181f}
+.acct-email{font-weight:700;font-size:13px;color:#6b6f7e;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-link{font-weight:800;font-size:13.5px;color:#1573c4;text-decoration:none;white-space:nowrap}
+.acct-logout{background:#fff;border:1px solid #dcdee5;border-radius:9px;padding:7px 13px;font:700 12.5px 'Manrope';color:#6b6f7e;cursor:pointer;transition:.13s}
+.acct-logout:hover{border-color:#18181f;color:#18181f}
 
 /* Hero + KPIs */
 .hero{padding:56px 0 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
@@ -97,6 +105,7 @@ footer{padding:44px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
   <a class="active" href="index.html" style="text-decoration:none">Каталог</a>
   <a href="jobs.html" style="text-decoration:none;font-weight:700;color:#6b6f7e;font-size:13.5px">Лента вакансий</a>
   <button class="cta" id="addBtn">＋ Добавить канал</button>
+  <div class="acct" id="acct"></div>
 </div></header>
 
 <div class="wrap">
@@ -299,6 +308,25 @@ document.getElementById("mAdd").onclick=async ()=>{
 };
 
 load();
+
+// Аккаунт в шапке. /api/me → гость («Войти») или e-mail + «Выйти» (+ «Админка» админу).
+(function(){
+  const el=document.getElementById("acct"); if(!el) return;
+  const escA=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const guest='<a class="acct-login" href="/login.html">Войти</a>';
+  fetch("/api/me",{credentials:"same-origin"})
+    .then(r=>r.ok?r.json():null)
+    .then(u=>{
+      if(!u||!u.email){ el.innerHTML=guest; return; }
+      el.innerHTML=(u.role==="admin"?'<a class="acct-link" href="/admin">Админка</a>':"")
+        +`<span class="acct-email" title="${escA(u.email)}">${escA(u.email)}</span>`
+        +'<button class="acct-logout" type="button">Выйти</button>';
+      el.querySelector(".acct-logout").onclick=()=>{
+        fetch("/api/logout",{method:"POST"}).then(()=>location.reload());
+      };
+    })
+    .catch(()=>{ el.innerHTML=guest; });
+})();
 </script>
 </body>
 </html>
