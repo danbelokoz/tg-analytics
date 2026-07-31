@@ -76,6 +76,23 @@ td .pill{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px}
 .sched .val{font-weight:800}
 .sched .val.due{color:var(--warn)}
 .srcnote{margin-top:9px;font-size:11px;color:#9095a5;font-weight:600;line-height:1.45}
+/* Ошибки/предупреждения: панель проблем последних прогонов (зелёная, если чисто) */
+.okbanner{display:flex;align-items:center;gap:12px;background:var(--okbg);border:1px solid #cdeed6;
+  border-radius:14px;padding:15px 18px;font-size:14px;font-weight:600;color:#0f5f2e}
+.errsummary{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.pillbig{font-size:13px;font-weight:800;padding:6px 12px;border-radius:10px}
+.pillbig.err{background:var(--errbg);color:var(--err)}
+.pillbig.warn{background:var(--warnbg);color:var(--warn)}
+.errsub{color:var(--muted);font-size:12.5px;font-weight:700}
+.errlist{display:flex;flex-direction:column;gap:10px}
+.erritem{border:1px solid var(--line);border-left-width:4px;border-radius:12px;padding:12px 15px;background:var(--card)}
+.erritem.fatal{border-left-color:var(--err)}
+.erritem.warn{border-left-color:var(--warn)}
+.ehead{display:flex;align-items:center;gap:10px}
+.ehead .badge{margin-left:0}
+.esrc{font-weight:800;font-size:13.5px}
+.etime{margin-left:auto;color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap}
+.emsg{margin-top:8px;font-size:13px;font-weight:600;color:#31323c;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -107,6 +124,42 @@ function ago(iso) {
   const d = Math.floor(h / 24); return `${d} дн назад`;
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const plural = (n, one, few, many) => { const m = n % 100, d = n % 10; return (m >= 11 && m <= 14) ? many : d === 1 ? one : (d >= 2 && d <= 4) ? few : many; };
+
+// Панель ошибок: проблемные прогоны из истории. Фатальные (ok:false) — красным,
+// частичные падения источников (failed>0) — жёлтым. Если чисто — зелёный баннер.
+function errorPanel(runs) {
+  const problems = runs.filter((r) => !r.ok || (r.failed | 0) > 0 || r.error);
+  if (!problems.length) {
+    return `<div class="okbanner"><span class="dot ok"></span>
+      <div><b>Ошибок нет.</b> Все последние прогоны (${runs.length}) прошли чисто.</div></div>`;
+  }
+  const items = problems.slice(0, 25).map((r) => {
+    const meta = WF[r.workflow] || { label: r.workflow };
+    const fatal = !r.ok;
+    const failedList = (r.meta && r.meta.failed) || [];
+    const emptyList = (r.meta && r.meta.empty) || [];
+    const msg = r.error || (r.failed ? `Упало источников: ${r.failed}` : "");
+    return `<div class="erritem ${fatal ? "fatal" : "warn"}">
+      <div class="ehead">
+        <span class="badge ${fatal ? "err" : ""}"${fatal ? "" : ' style="background:var(--warnbg);color:var(--warn)"'}>${fatal ? "ошибка" : "предупреждение"}</span>
+        <span class="esrc">${esc(meta.label)}</span>
+        <span class="etime" title="${esc(r.finished_at)}">${ago(r.finished_at)} · ${new Date(r.finished_at).toLocaleString("ru-RU")}</span>
+      </div>
+      ${msg ? `<div class="emsg">${esc(msg)}</div>` : ""}
+      ${failedList.length ? `<details><summary>Упавшие источники (${failedList.length})</summary><ul>${failedList.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
+      ${emptyList.length ? `<details><summary>Пустые, 0 вакансий (${emptyList.length})</summary><ul>${emptyList.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></details>` : ""}
+    </div>`;
+  }).join("");
+  const fatalN = problems.filter((r) => !r.ok).length;
+  const warnN = problems.length - fatalN;
+  return `<div class="errsummary">
+      ${fatalN ? `<span class="pillbig err">${fatalN} ${plural(fatalN, "ошибка", "ошибки", "ошибок")}</span>` : ""}
+      ${warnN ? `<span class="pillbig warn">${warnN} ${plural(warnN, "предупреждение", "предупреждения", "предупреждений")}</span>` : ""}
+      <span class="errsub">за последние ${runs.length} ${plural(runs.length, "прогон", "прогона", "прогонов")}</span>
+    </div>
+    <div class="errlist">${items}</div>`;
+}
 
 function statusCard(run, key) {
   const meta = WF[key] || { label: key, note: "", unit: "записей" };
@@ -263,8 +316,13 @@ async function load() {
     const history = runs.slice(0, 40).map(historyRow).join("");
 
     $("root").innerHTML = `
-      <h1>Свежесть источников</h1>
-      <div class="hint">Когда каждый фильтр ленты обновлялся в последний раз и когда ждать следующего обновления.</div>
+      <h1>Мониторинг сбора</h1>
+      <div class="hint">Ошибки прогонов, свежесть источников и история сбора.</div>
+
+      <div class="sec">Ошибки и предупреждения</div>
+      ${errorPanel(runs)}
+
+      <div class="sec">Свежесть источников</div>
       <div class="srccards">${srcCards}</div>
 
       <div class="sec">Прогоны пайплайна</div>
