@@ -57,6 +57,25 @@ td .pill{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px}
 .pill.ok{background:var(--okbg);color:var(--ok)}.pill.err{background:var(--errbg);color:var(--err)}
 .state{padding:50px 20px;text-align:center;color:var(--muted);font-weight:600}
 .mono{font-variant-numeric:tabular-nums}
+/* Свежесть источников: карточка «когда обновлялись» + мини-график + расписание */
+.srccards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:760px){.srccards{grid-template-columns:1fr}}
+.fresh{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.fresh .top{display:flex;align-items:center;gap:9px}
+.fresh h3{font-size:14.5px;font-weight:800}
+.fresh .badge{margin-left:auto}
+.fresh .big{margin-top:12px;font-size:20px;font-weight:800;letter-spacing:-.01em}
+.fresh .big small{display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px}
+.spark{margin-top:12px;display:block;width:100%;height:38px}
+.spark polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.spark .area{fill:var(--accent);opacity:.09;stroke:none}
+.spark .dotlast{fill:var(--accent)}
+.sched{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;font-size:12px;line-height:1.7}
+.sched .row{display:flex;justify-content:space-between;gap:8px}
+.sched .k{color:var(--muted);font-weight:600}
+.sched .val{font-weight:800}
+.sched .val.due{color:var(--warn)}
+.srcnote{margin-top:9px;font-size:11px;color:#9095a5;font-weight:600;line-height:1.45}
 </style>
 </head>
 <body>
@@ -125,6 +144,83 @@ function historyRow(r) {
   </tr>`;
 }
 
+// ── Свежесть источников ленты (когда обновлялись + когда должны) ─────────────
+// Три фильтра ленты питаются двумя прогонами: Telegram — из «tg»; Global и
+// Ru-global — оба из «sites» (career-сайты делятся на Global/Ru-global на фронте
+// по RU-корням уже ПОСЛЕ сбора, поэтому обновляются одним прогоном).
+const SOURCES = [
+  { key: "Telegram", wf: "tg", label: "Telegram-чаты", kind: "every", everyMin: 30,
+    schedText: "каждые 30 минут", note: "Посты из Telegram-каналов о работе." },
+  { key: "Global", wf: "sites", label: "Global", kind: "cron", cronUTC: [5, 17],
+    schedText: "2×/сутки · ~08:00 и ~20:00 МСК", note: "Международные career-сайты. Собирается одним прогоном с Ru-global." },
+  { key: "Ru-global", wf: "sites", label: "Ru-global", kind: "cron", cronUTC: [5, 17],
+    schedText: "2×/сутки · ~08:00 и ~20:00 МСК", note: "Компании с RU-корнями. Собирается одним прогоном с Global." },
+];
+
+// Ближайшее ожидаемое обновление: интервал — последний прогон + интервал;
+// крон (часы UTC) — ближайший час из списка после «сейчас».
+function nextUpdate(src, lastIso) {
+  if (src.kind === "every") {
+    const base = lastIso ? new Date(lastIso).getTime() : Date.now();
+    return new Date(base + src.everyMin * 60000);
+  }
+  const now = Date.now(), d = new Date();
+  for (let add = 0; add < 3; add++)
+    for (const h of src.cronUTC) {
+      const cand = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + add, h, 0, 0));
+      if (cand.getTime() > now) return cand;
+    }
+  return null;
+}
+const fmtDT = (d) => d ? d.toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+function inLabel(d) {
+  if (!d) return "—";
+  const s = (d.getTime() - Date.now()) / 1000;
+  if (s <= 0) return "ожидается сейчас";
+  const m = Math.round(s / 60); if (m < 60) return `через ${m} мин`;
+  const h = Math.round(m / 60); if (h < 48) return `через ${h} ч`;
+  return `через ${Math.round(h / 24)} дн`;
+}
+
+// Мини-график «собрано за последние прогоны» (значения oldest→newest).
+function sparkline(vals) {
+  if (!vals.length) return `<div class="srcnote">графика нет — прогонов ещё не было</div>`;
+  const w = 180, h = 38, pad = 4;
+  const min = Math.min(...vals), max = Math.max(...vals), range = (max - min) || 1;
+  const X = (i) => pad + (vals.length < 2 ? (w - 2 * pad) : (i / (vals.length - 1)) * (w - 2 * pad));
+  const Y = (v) => h - pad - ((v - min) / range) * (h - 2 * pad);
+  const pts = vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+  const area = `${X(0).toFixed(1)},${h - pad} ${pts} ${X(vals.length - 1).toFixed(1)},${h - pad}`;
+  const lx = X(vals.length - 1).toFixed(1), ly = Y(vals[vals.length - 1]).toFixed(1);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polygon class="area" points="${area}"/><polyline points="${pts}"/>
+    <circle class="dotlast" cx="${lx}" cy="${ly}" r="2.6"/></svg>`;
+}
+
+// Карточка источника: свежесть + мини-график собранного + расписание/следующее.
+function freshCard(src, run, wfRuns) {
+  const last = run && run.finished_at;
+  const staleMs = src.kind === "every" ? src.everyMin * 60000 * 2 : 15 * 3600 * 1000;
+  const fresh = last ? (Date.now() - new Date(last).getTime()) < staleMs : false;
+  const next = nextUpdate(src, last);
+  const due = next && next.getTime() <= Date.now();
+  const state = last ? (fresh ? "ok" : "err") : "na";
+  const stateText = last ? (fresh ? "актуально" : "устарело") : "нет данных";
+  const series = wfRuns.slice().reverse().map((r) => r.total).filter((v) => v != null).slice(-16);
+  return `<div class="fresh">
+    <div class="top"><span class="dot ${state}"></span><h3>${esc(src.label)}</h3>
+      <span class="badge ${state}">${stateText}</span></div>
+    <div class="big">${last ? ago(last) : "—"}<small>${last ? new Date(last).toLocaleString("ru-RU") : "обновлений ещё не было"}</small></div>
+    ${sparkline(series)}
+    <div class="sched">
+      <div class="row"><span class="k">Обновляется</span><span class="val">${esc(src.schedText)}</span></div>
+      <div class="row"><span class="k">Следующее</span><span class="val ${due ? "due" : ""}">${inLabel(next)}</span></div>
+      <div class="row"><span class="k">Ориентир</span><span class="val">${fmtDT(next)}</span></div>
+    </div>
+    <div class="srcnote">${esc(src.note)}</div>
+  </div>`;
+}
+
 // fetch JSON с таймаутом — чтобы страница НИКОГДА не висла на «Загрузка…»
 // (медленный/уснувший Supabase, зависший запрос): по таймауту вернём null.
 async function fetchJSON(url, ms = 12000) {
@@ -161,13 +257,19 @@ async function load() {
     const runs = Array.isArray(st.history) ? st.history : [];
     const byWf = {};
     for (const run of latest) byWf[run.workflow] = run;
+    const runsBy = (wf) => runs.filter((r) => r.workflow === wf);
+    const srcCards = SOURCES.map((s) => freshCard(s, byWf[s.wf], runsBy(s.wf))).join("");
     const cards = ["tg", "sites"].map((k) => statusCard(byWf[k], k)).join("");
     const history = runs.slice(0, 40).map(historyRow).join("");
 
     $("root").innerHTML = `
-      <h1>Мониторинг сбора</h1>
-      <div class="hint">Когда и как прошёл последний сбор вакансий по каждому источнику.</div>
+      <h1>Свежесть источников</h1>
+      <div class="hint">Когда каждый фильтр ленты обновлялся в последний раз и когда ждать следующего обновления.</div>
+      <div class="srccards">${srcCards}</div>
+
+      <div class="sec">Прогоны пайплайна</div>
       <div class="cards">${cards}</div>
+
       <div class="sec">История прогонов</div>
       ${runs.length
         ? `<table><thead><tr><th>Время</th><th>Источник</th><th>Статус</th><th>Собрано</th><th>Упало</th><th>Заметка</th></tr></thead><tbody>${history}</tbody></table>`
