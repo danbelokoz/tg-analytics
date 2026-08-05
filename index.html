@@ -177,25 +177,21 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
    по своему содержимому. Иначе (stretch) при раскрытии одной карточки «глазом»
    весь ряд тянется по ней и соседние карточки тоже вырастают. Так растёт только
    раскрытая вакансия, соседи остаются как есть. */
-.feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+.feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
 @media(max-width:1240px){.feed{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.feed{grid-template-columns:1fr}}
 .post{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;
   box-shadow:0 1px 2px rgba(24,24,31,.03);transition:box-shadow .15s,border-color .15s}
-/* Карточки в ряду равной высоты (align-items:stretch у .feed). Заголовок и
-   описание — не более 2 строк (max-height), но короткие остаются короткими: их
-   слабина уходит вверх, а зоны меток прижимаются к НИЗУ карточки (margin-top:auto
-   у .conds), поэтому бейджи всех карточек ряда выровнены по нижнему краю. */
+/* Заголовок и описание — по 2 строки (фикс. высота), поэтому зона меток у всех
+   карточек начинается на одном уровне, а отступ от текста одинаковый. Метки —
+   единый поток (условия + навыки вперемешку, различаются цветом), 1–2 строки
+   (лишнее прячем). Высоту ряда не растягиваем — низ у каждой карточки на равном
+   отступе от последней строки меток. */
 .feed:not(.rows) .post{display:flex;flex-direction:column;min-height:186px}
 .post{cursor:pointer}
-.feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:2.5em}
-.feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:3.1em}
-/* Зоны меток прижаты к низу карточки. Каждая — одна строка пилюль (overflow:hidden);
-   пустые зоны схлопываются (:empty), чтобы под описанием не висело пустое место. */
-.feed:not(.rows) .conds{height:26px;margin-top:auto;overflow:hidden;align-content:flex-start}
-.feed:not(.rows) .skills{height:26px;margin-top:8px;overflow:hidden;align-content:flex-start}
-.feed:not(.rows) .conds:empty{height:0;margin-top:auto}
-.feed:not(.rows) .skills:empty{height:0;margin-top:0}
+.feed:not(.rows) .ptitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:2.5em}
+.feed:not(.rows) .pexc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:3.1em}
+.feed:not(.rows) .tags{max-height:59px;overflow:hidden;align-content:flex-start}
 .post:hover{border-color:#dfe2e8;box-shadow:0 8px 24px rgba(24,24,31,.07)}
 /* Шапка карточки — всегда одна строка фиксированной высоты, чтобы заголовки
    всех карточек стартовали на одном уровне (пилюли формата/грейда ушли в нижнюю
@@ -222,11 +218,8 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 /* Зарплата: реальная вилка — акцентная (зелёная), оценка — приглушённая с «≈». */
 .tag.sal{background:#e7f7ec;color:#137a3a;font-weight:800}
 .tag.sal.est{background:transparent;border:1px dashed #cfd3dc;color:#8a8f9e;font-weight:700}
-/* Две зоны меток на карточке: «условия» (цветные пилюли — зарплата/формат/страна/
-   грейд) и «навыки» (нейтральные хэштеги). Разведены цветом и строкой, чтобы глаз
-   не смешивал «сколько и где» с «про что». */
-.conds{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
-.skills{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+/* Метки в единый поток: условия (цветные — зарплата/формат/страна/грейд) и навыки
+   (нейтральные хэштеги) вперемешку заполняют строки, различаются только цветом. */
 .cond{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;
   padding:4px 10px;border-radius:8px;white-space:nowrap;background:var(--pill);color:var(--pill-ink)}
 .cond svg{width:12px;height:12px;opacity:.9;flex:0 0 auto}
@@ -301,7 +294,7 @@ body.noscroll{overflow:hidden}
 .feed.rows .post{border:none;border-radius:0;border-bottom:1px solid var(--line);box-shadow:none;padding:12px 18px}
 .feed.rows .post:last-child{border-bottom:none}
 .feed.rows .post:hover{box-shadow:none;background:#fafbfc}
-.feed.rows .pexc,.feed.rows .conds,.feed.rows .skills{display:none}
+.feed.rows .pexc,.feed.rows .tags{display:none}
 .feed.rows .ptitle{margin-top:4px;font-size:15.5px}
 .feed.rows .mpill{font-size:11.5px;padding:3px 8px}
 
@@ -892,8 +885,7 @@ function cardCo(j){
     </div>
     <div class="ptitle">${esc(j.title)}</div>
     <div class="pexc">${esc(excerpt)}</div>
-    <div class="conds">${conds}</div>
-    <div class="skills">${skillChips(skills)}</div>
+    <div class="tags">${conds}${skillChips(skills)}</div>
   </div>`;
 }
 
@@ -924,8 +916,7 @@ function cardTg(p){
     </div>
     <div class="ptitle">${esc(title)}</div>
     <div class="pexc">${esc(exc)}</div>
-    <div class="conds">${conds}</div>
-    <div class="skills">${isDigest?"":skillChips(extractSkills(p.text, company))}</div>
+    <div class="tags">${conds}${isDigest?"":skillChips(extractSkills(p.text, company))}</div>
   </div>`;
 }
 
