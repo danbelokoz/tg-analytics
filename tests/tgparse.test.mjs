@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { parseTgJob, extractSkills } = require("../tgparse.js");
+const { parseTgJob, extractSkills, detectCountry } = require("../tgparse.js");
 
 test("«роль в Компания» — вытаскивает и должность, и компанию", () => {
   const r = parseTgJob("QA Engineer (Data Stack) в Exness\n\nРебята активно ищут", []);
@@ -724,4 +724,34 @@ test("extractSkills без company — поведение не меняется 
     extractSkills("4+ года опыта, SQL, Python, опыт в fintech и AI-агентах. Kafka, Docker."),
     ["python", "sql", "kafka", "docker", "ai", "fintech"],
   );
+});
+
+// --- detectCountry: страна вакансии из текста поста (янтарная пилюля) ---
+
+test("российский город → Россия", () => {
+  assert.equal(detectCountry("Ищем SMM-менеджера, офис в Москве, гибрид"), "Россия");
+});
+
+test("название страны напрямую → Россия", () => {
+  assert.equal(detectCountry("Удалённая работа по всей России"), "Россия");
+});
+
+test("зарубежный город → его страна", () => {
+  assert.equal(detectCountry("Senior Python developer, office in Berlin"), "Германия");
+  assert.equal(detectCountry("Работа на Кипре, Лимассол"), "Кипр");
+  assert.equal(detectCountry("Relocation to Dubai"), "ОАЭ");
+});
+
+test("релокация из РФ за рубеж → страна назначения, а не Россия", () => {
+  assert.equal(detectCountry("Релокация из Москвы в Берлин, помогаем с визой"), "Германия");
+});
+
+test("нет географии → null (лучше без пилюли, чем ошибка)", () => {
+  assert.equal(detectCountry("Ищем сильного бэкендера в продуктовую команду. Удалёнка."), null);
+  assert.equal(detectCountry(""), null);
+});
+
+test("не путать «нижнюю границу вилки» и «сочинение» с городами РФ", () => {
+  assert.equal(detectCountry("Зарплата: нижняя граница 120 000 ₽, удалёнка"), null);
+  assert.equal(detectCountry("Требуется навык сочинения текстов, удалённо"), null);
 });
