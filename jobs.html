@@ -187,7 +187,8 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
    (даже пустая), чтобы ВСЕ карточки в сетке были одной высоты: заголовок и
    описание уже зажаты в 2 строки, поэтому фикс тегов делает блоки единого размера.
    align-content:flex-start — одна строка пилюль прижата к верху зоны. */
-.feed:not(.rows) .tags{height:58px;margin-top:13px;overflow:hidden;align-content:flex-start}
+.feed:not(.rows) .conds{height:26px;margin-top:13px;overflow:hidden;align-content:flex-start}
+.feed:not(.rows) .skills{height:26px;margin-top:8px;overflow:hidden;align-content:flex-start}
 .post:hover{border-color:#dfe2e8;box-shadow:0 8px 24px rgba(24,24,31,.07)}
 /* Шапка карточки — всегда одна строка фиксированной высоты, чтобы заголовки
    всех карточек стартовали на одном уровне (пилюли формата/грейда ушли в нижнюю
@@ -214,6 +215,22 @@ h1{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em}
 /* Зарплата: реальная вилка — акцентная (зелёная), оценка — приглушённая с «≈». */
 .tag.sal{background:#e7f7ec;color:#137a3a;font-weight:800}
 .tag.sal.est{background:transparent;border:1px dashed #cfd3dc;color:#8a8f9e;font-weight:700}
+/* Две зоны меток на карточке: «условия» (цветные пилюли — зарплата/формат/страна/
+   грейд) и «навыки» (нейтральные хэштеги). Разведены цветом и строкой, чтобы глаз
+   не смешивал «сколько и где» с «про что». */
+.conds{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+.skills{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.cond{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;
+  padding:4px 10px;border-radius:8px;white-space:nowrap;background:var(--pill);color:var(--pill-ink)}
+.cond svg{width:12px;height:12px;opacity:.9;flex:0 0 auto}
+.cond.sal{background:#e7f7ec;color:#137a3a}
+.cond.sal.est{background:transparent;border:1px dashed #cfd3dc;color:#8a8f9e;font-weight:700}
+.cond.fmt{background:#eaf3ff;color:#1573c4}
+.cond.geo{background:#fbf0da;color:#9a6a10}
+.htag{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:4px 10px;
+  border-radius:8px;color:var(--pill-ink);background:transparent;border:1px solid #e6e7ec}
+.htag .h{color:#adb1be;font-weight:800;margin-right:1px}
+.htag.tmore{border:none;color:#9095a5;padding-left:2px}
 
 /* Кнопка-«глаз» в правом верхнем углу карточки (как значок просмотров в Telegram):
    по клику показывает полное описание вакансии в плавающей панели ПОВЕРХ соседних
@@ -277,7 +294,7 @@ body.noscroll{overflow:hidden}
 .feed.rows .post{border:none;border-radius:0;border-bottom:1px solid var(--line);box-shadow:none;padding:12px 18px}
 .feed.rows .post:last-child{border-bottom:none}
 .feed.rows .post:hover{box-shadow:none;background:#fafbfc}
-.feed.rows .pexc,.feed.rows .tags{display:none}
+.feed.rows .pexc,.feed.rows .conds,.feed.rows .skills{display:none}
 .feed.rows .ptitle{margin-top:4px;font-size:15.5px}
 .feed.rows .mpill{font-size:11.5px;padding:3px 8px}
 
@@ -452,6 +469,9 @@ const LINKOUT = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fil
 // Только иконка (как значок просмотров в Telegram), в правом верхнем углу карточки.
 const EYE = '<button class="eye" type="button" aria-expanded="false" aria-label="Предпросмотр">'
   + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+// Иконки для пилюль-условий: домик — формат работы, булавка — страна.
+const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v9h14v-9"/></svg>';
+const ICON_PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>';
 
 // Промо-подписи каналов («При отклике укажите, что нашли вакансию на …»,
 // «Подписывайтесь…», «Канал не участвует в найме…» и т.п.) — это не часть
@@ -804,20 +824,25 @@ function renderFilters(){
   });
 }
 
-// Мета-пилюли (серые) и скилл-чипы — раскладка как у карточки job-борда:
-// сверху рядом с источником формат/локация/грейд, под заголовком — роль/стек.
-function metaPills(arr){ return arr.filter(Boolean).map(m=>`<span class="mpill">${esc(m)}</span>`).join(""); }
-// Чипы навыков: 5 штук + счётчик остатка, как в референсном макете.
+// Навыки в нижней зоне карточки — нейтральные хэштеги (роль/стек «про что»), 5 штук
+// + счётчик остатка. Отделены от условий и цветом (серые), и строкой.
 function skillChips(skills){
   const shown=skills.slice(0,5), extra=skills.length-shown.length;
-  return shown.map(t=>`<span class="tag">${esc(t)}</span>`).join("")
-    + (extra>0?`<span class="tag tmore">+${extra} skills</span>`:"");
+  return shown.map(t=>`<span class="htag"><span class="h">#</span>${esc(t)}</span>`).join("")
+    + (extra>0?`<span class="htag tmore">+${extra} skills</span>`:"");
 }
-// Пилюля зарплаты в зоне тегов: реальная вилка выделена, оценка — приглушённо с «≈».
+// Пилюля зарплаты в зоне условий: реальная вилка выделена (зелёная), оценка —
+// приглушённая пунктирная с «≈».
 function salPill(p){
   const s=salaryInfo(p); if(!s) return "";
-  return `<span class="tag sal${s.est?" est":""}">${esc(s.text)}</span>`;
+  return `<span class="cond sal${s.est?" est":""}">${esc(s.text)}</span>`;
 }
+// Прочие пилюли-условия (цветные, «сколько и где»): формат работы — синяя с
+// домиком, страна — янтарная с булавкой (страну распознаём из текста поста,
+// detectCountry в tgparse.js), грейд — нейтральная.
+function fmtCond(f){ return f?`<span class="cond fmt">${ICON_HOME}${esc(f)}</span>`:""; }
+function geoCond(country){ return country?`<span class="cond geo">${ICON_PIN}${esc(country)}</span>`:""; }
+function gradeConds(grade){ return (grade||[]).map(g=>`<span class="cond">${esc(g)}</span>`).join(""); }
 
 // Разбор TG-поста (должность/компания) — в tgparse.js, чтобы покрыть тестами.
 // Запасной заголовок, когда эвристика не выделила должность (дайджесты, нестандартные
@@ -858,9 +883,10 @@ function cardCo(j){
   const grade=(j.tags||[]).filter(t=>GRADE.has(t));
   const skills=(j.tags||[]).filter(t=>!GRADE.has(t)&&!FMT.has(t));
   const ats=ATS_NAME[j.ats]||j.ats||"";
-  // Пилюли формата/грейда/локации теперь в нижней зоне тегов (единая зона — не
-  // «скачут» и не двигают заголовок). Верхняя строка — только компания и время.
-  const tags=salPill(j)+metaPills([j.location, j.work_format, ...grade])+skillChips(skills);
+  // Две зоны меток: условия (зарплата/формат/страна/грейд — цветные) и навыки
+  // (хэштеги). Обе фиксированной высоты, поэтому карточки одной высоты и заголовок
+  // не «скачет». Страну для карточки компании берём из поля локации.
+  const conds=salPill(j)+fmtCond(j.work_format)+geoCond(detectCountry(j.location))+gradeConds(grade);
   // Описание есть у всех карточек: короткое из ATS, иначе — отдел/локация.
   const excerpt=j.excerpt || [j.department, j.location].filter(Boolean).join(" · ") || "Открытая вакансия — подробности на career-сайте.";
   return `<div class="post" data-kind="co" data-id="${j._id}" data-link="${esc(j.apply_url)}">
@@ -870,7 +896,8 @@ function cardCo(j){
     </div>
     <div class="ptitle">${esc(j.title)}</div>
     <div class="pexc">${esc(excerpt)}</div>
-    <div class="tags">${tags}</div>
+    <div class="conds">${conds}</div>
+    <div class="skills">${skillChips(skills)}</div>
   </div>`;
 }
 
@@ -888,7 +915,9 @@ function cardTg(p){
   // company передаём вторым аргументом (Задача 6): совпадение навыка внутри
   // имени компании/продукта («Яндекс Go», «AI-продукт Джени») не должно
   // давать чип — extractSkills маскирует company перед поиском.
-  const tags=salPill(p)+metaPills([...fmt, ...grade])+skillChips(extractSkills(p.text, company));
+  // Условия: зарплата + формат(ы) + страна (распознаём из текста поста) + грейд.
+  // Навыки — отдельной строкой хэштегами. Роли остаются тегами для фильтров слева.
+  const conds=salPill(p)+fmt.map(fmtCond).join("")+geoCond(detectCountry(p.text))+gradeConds(grade);
   const exc=tgExcerpt(p.text, title) || "Подробности — на странице вакансии.";
   return `<div class="post" data-kind="tg" data-id="${p._id}" data-link="${esc(p.link)}">
     <div class="ptop">${avatarTg()}
@@ -897,7 +926,8 @@ function cardTg(p){
     </div>
     <div class="ptitle">${esc(title)}</div>
     <div class="pexc">${esc(exc)}</div>
-    <div class="tags">${tags}</div>
+    <div class="conds">${conds}</div>
+    <div class="skills">${skillChips(extractSkills(p.text, company))}</div>
   </div>`;
 }
 
@@ -1042,7 +1072,7 @@ function detailModel(p){
       ava:avatarCo(p), company:p.company,
       source:`Career-сайт компании${ats?` · ${esc(ats)}`:""}`,
       title:p.title, desc:p.excerpt||"Полное описание — на странице вакансии.",
-      meta:metaPills([p.location,p.work_format,...grade]), skills, apply:p.apply_url,
+      meta:fmtCond(p.work_format)+geoCond(detectCountry(p.location))+gradeConds(grade), skills, apply:p.apply_url,
     };
   }
   const {title:jt, company:co}=parseTgJob(p.text,p.tags);
@@ -1054,7 +1084,7 @@ function detailModel(p){
     source:`Telegram-канал${ch?` · ${ch}`:""}`,
     title:jt||firstLine(p.text)||"Вакансия",
     desc:stripPromo(p.text)||"—",
-    meta:metaPills([...fmt,...grade]), skills, apply:p.link,
+    meta:fmt.map(fmtCond).join("")+geoCond(detectCountry(p.text))+gradeConds(grade), skills, apply:p.link,
   };
 }
 function detailHtml(p){
@@ -1072,7 +1102,7 @@ function detailHtml(p){
       ${(()=>{const s=salaryInfo(p);if(!s)return"";const note=s.intl?"оценка оклада, рынок США (грейд + роль + тир компании) — не из вакансии":"оценка по рынку (грейд + роль), а не из вакансии";return `<div class="dsec">Зарплата</div><div class="dsal${s.est?" est":""}">${esc(s.text)}${s.est?`<span class="dsal-note">${note}</span>`:""}</div>`;})()}
       <div class="dsec">Описание</div>
       <div class="ddesc">${esc(m.desc)}</div>
-      ${m.skills.length?`<div class="dsec">Метки</div><div class="dtags">${m.skills.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>`:""}
+      ${m.skills.length?`<div class="dsec">Метки</div><div class="dtags">${m.skills.map(t=>`<span class="htag"><span class="h">#</span>${esc(t)}</span>`).join("")}</div>`:""}
       <a class="dapply" href="${esc(m.apply)}" target="_blank" rel="noopener">Откликнуться ${LINKOUT}</a>
     </article>
   </div>`;
