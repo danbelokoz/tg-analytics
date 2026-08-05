@@ -1164,6 +1164,9 @@ function looksLikeVacancy(p){
   if(isDigestPost(text)) return false;
   // Резюме соискателя — не вакансия: анкета человека с его личными контактами.
   if(isResumePost(text)) return false;
+  // «Лёгкий заработок» — не вакансия, а завлекаловка в скам/пирамиду («звучит как
+  // сказка», «по готовым шаблонам», «новички зарабатывают»). См. isEasyMoneyPost.
+  if(isEasyMoneyPost(text)) return false;
   const strong=VAC_RE.test(text);
   if(ADV_RE.test(text) && !STRUCT_VAC.test(text)) return false;  // реклама/курсы/контент без СТРУКТУРНОГО маркера найма
   // Лучше отсечь лишнее, чем пропустить мусор: роль засчитываем как вакансию только

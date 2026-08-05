@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
-const { parseTgJob, extractSkills, isDigestPost, isResumePost } = createRequire(import.meta.url)("../tgparse.js");
+const { parseTgJob, extractSkills, isDigestPost, isResumePost, isEasyMoneyPost } = createRequire(import.meta.url)("../tgparse.js");
 const posts = JSON.parse(readFileSync(new URL("../data/job_feed.json", import.meta.url)));
 
 let co = 0, ti = 0, sk = 0, skCards = 0;
@@ -12,15 +12,15 @@ for (const p of posts) {
   const r = parseTgJob(p.text, p.tags);
   if (r.company) co++;
   if (r.title) ti++;
-  // Навыки считаем так же, как их показывает карточка: подборки (isDigestPost)
-  // и резюме соискателей (isResumePost) в ленту не попадают — looksLikeVacancy
-  // в jobs.html отсеивает их этими же функциями, а не тегом «Дайджест» (Находка
-  // 3, повторное ревью: тег ставится эвристикой скрейпера «5+ ролевых слов» и
-  // висит на обычных длинных вакансиях — доверять ему после этого нельзя нигде,
-  // включая замер охвата). Такие посты не входят ни в числитель, ни в
-  // знаменатель. Company передаём вторым аргументом — как в jobs.html, иначе
-  // «Яндекс Go» даст навык go.
-  if (!isDigestPost(p.text) && !isResumePost(p.text)) {
+  // Навыки считаем так же, как их показывает карточка: подборки (isDigestPost),
+  // резюме соискателей (isResumePost) и посты «лёгкий заработок» (isEasyMoneyPost)
+  // в ленту не попадают — looksLikeVacancy в jobs.html отсеивает их этими же
+  // функциями, а не тегом «Дайджест» (Находка 3, повторное ревью: тег ставится
+  // эвристикой скрейпера «5+ ролевых слов» и висит на обычных длинных вакансиях —
+  // доверять ему после этого нельзя нигде, включая замер охвата). Такие посты не
+  // входят ни в числитель, ни в знаменатель. Company передаём вторым аргументом —
+  // как в jobs.html, иначе «Яндекс Go» даст навык go.
+  if (!isDigestPost(p.text) && !isResumePost(p.text) && !isEasyMoneyPost(p.text)) {
     skCards++;
     if (extractSkills(p.text, r.company).length) sk++;
   }
