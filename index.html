@@ -509,17 +509,26 @@ const SAL_NOISE = /(инвестиц|invest|раунд|valuation|капитал�
 const SAL_KW    = /(зарплат|з\/п|з\.п|з\/пл|оклад|доход|заработн|вилк|компенсац|salary|на руки|\bfrom\b)/i;
 const SAL_DUR   = /(лет|год|года|мес|month|year)/i;
 const SAL_TOKEN = /(\d[\d\s]*\d|\d)\s*(к|k|тыс[а-я.]*)?/gi;
-const SAL_RATE  = {"$":90, "€":100};
+const SAL_YEAR  = /(year|annual|\bp\.?a\.?\b|\/yr|в\s*год|годов)/i;
+// Разбор зарплаты из строки. Возвращает диапазоны {lo,hi,cur} — суммы В МЕСЯЦ и в
+// ИСХОДНОЙ валюте (RUB/USD/EUR/GBP), чтобы показать «$11K–$17K/мес», а не пересчёт
+// в рубли. В ₽ переводим только для фильтра-бакетов (в load).
 function parseSalary(text){
   if(!text) return [];
   const out=[];
   for(const raw of text.split("\n")){
-    const ln=raw.trim(); if(!ln) continue;
+    let ln=raw.trim(); if(!ln) continue;
     if(SAL_NOISE.test(ln) && !SAL_KW.test(ln)) continue;                 // строка про деньги компании, не оклад
-    const hasCur=/[$€₽]|руб|USD|EUR|RUB/i.test(ln);
+    const hasCur=/[$€£₽]|руб|USD|EUR|GBP|RUB/i.test(ln);
     const hasK  =/\d\s*[кk]/i.test(ln) || /тыс/i.test(ln);
     if(!(SAL_KW.test(ln) || hasCur || hasK)) continue;                   // в строке нет признаков зарплаты
-    const rate = /[$]|USD/i.test(ln) ? SAL_RATE["$"] : (/€|EUR/i.test(ln) ? SAL_RATE["€"] : 1);
+    const cur = /[$]|USD/i.test(ln) ? "USD" : (/€|EUR/i.test(ln) ? "EUR" : (/£|GBP/i.test(ln) ? "GBP" : "RUB"));
+    const foreign = cur!=="RUB";
+    // Запятая-разделитель тысяч в US-формате: «$130,000» → «130000». Иначе разбор
+    // резал число по запятой и читал «$130» (→ ~12k ₽). Десятичную запятую
+    // («1,5к» — запятая перед 1–2 цифрами) не трогаем.
+    ln = ln.replace(/(\d),(?=\d{3}(?:\D|$))/g, "$1");
+    const yearly = SAL_YEAR.test(ln);
     const vals=[]; let m; SAL_TOKEN.lastIndex=0;
     while((m=SAL_TOKEN.exec(ln))){
       const suf=m[2], tail=ln.slice(m.index+m[0].length, m.index+m[0].length+6);
@@ -527,11 +536,14 @@ function parseSalary(text){
       let n=parseFloat(m[1].replace(/\s/g,"").replace(",","."));
       if(!isFinite(n)) continue;
       if(suf) n*=1000;                                                   // 200к / $6K / 80 тыс
-      else if(rate===1 && n<1000) n*=1000;                              // «150» в рублёвой строке = 150k
-      n*=rate;
-      if(n>=10000 && n<=5000000) vals.push(n);                          // отсекаем мусор вне диапазона окладов
+      else if(cur==="RUB" && n<1000) n*=1000;                            // «150» в рублёвой строке = 150k
+      // Годовой оклад → месячный: явное «year/год» ИЛИ крупная валютная сумма —
+      // месячных $/€ такого размера не бывает, это годовой оклад US-формата.
+      if(yearly || (foreign && n>=40000)) n/=12;
+      const rub=n*(CUR_RUB[cur]||1);
+      if(rub>=10000 && rub<=5000000) vals.push(n);                       // диапазон проверяем в ₽, храним в валюте
     }
-    if(vals.length) out.push([Math.min(...vals), Math.max(...vals)]);
+    if(vals.length) out.push({lo:Math.min(...vals), hi:Math.max(...vals), cur});
   }
   return out;
 }
@@ -1147,10 +1159,13 @@ function looksLikeVacancy(p){
 function normTg(p){
   p._src="Telegram"; p._srcCat="Telegram";
   p._search=((p.text||"")+" "+(p.channel_title||"")+" "+(p.username||"")).toLowerCase();
-  p._salIv=parseSalary(p.text);              // зарплата разбирается из текста поста
+  // Зарплата из текста поста: диапазоны в исходной валюте (в месяц). Для фильтра —
+  // переводим в ₽ (_salIv, ₽/мес); показываем в исходной валюте (fmtCur).
+  const _sal=parseSalary(p.text);
+  p._salIv=_sal.map(s=>[s.lo*(CUR_RUB[s.cur]||1), s.hi*(CUR_RUB[s.cur]||1)]);
   // Показываем реальную вилку, только если распознан ровно один диапазон
   // (у дайджестов их много — одну показывать нельзя, но для фильтра оставляем все).
-  if(p._salIv.length===1) p._salDisp=fmtRub(p._salIv[0][0], p._salIv[0][1]);
+  if(_sal.length===1) p._salDisp=fmtCur(_sal[0].lo, _sal[0].hi, _sal[0].cur);
   return p;
 }
 function normCo(j){
