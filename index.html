@@ -831,6 +831,17 @@ function salPill(p){
 // detectCountry в tgparse.js), грейд — нейтральная.
 function fmtCond(f){ return f?`<span class="cond fmt">${ICON_HOME}${esc(f)}</span>`:""; }
 function geoCond(country){ return country?`<span class="cond geo">${ICON_PIN}${esc(country)}</span>`:""; }
+// Локация career-вакансии: у ATS (Workday/Greenhouse…) это чистое поле, поэтому
+// показываем его КАК ЕСТЬ (Singapore, Berlin, San Francisco…), а не угадываем
+// страну по словарю — так ловятся любые города/страны, а не только знакомые.
+// Пропускаем не-места: счётчик «2 Locations», «Multiple/Various», голое «Remote»
+// (последнее и так показано пилюлей формата). Длинную строку подрезаем.
+function locCond(loc){
+  let s=(loc||"").trim();
+  if(!s || /^\d+\s+locations?$/i.test(s) || /^(multiple|various)\b/i.test(s) || /^remote$/i.test(s)) return "";
+  if(s.length>28) s=s.slice(0,27)+"…";
+  return `<span class="cond geo">${ICON_PIN}${esc(s)}</span>`;
+}
 function gradeConds(grade){ return (grade||[]).map(g=>`<span class="cond">${esc(g)}</span>`).join(""); }
 
 // Разбор TG-поста (должность/компания) — в tgparse.js, чтобы покрыть тестами.
@@ -875,7 +886,7 @@ function cardCo(j){
   // Две зоны меток: условия (зарплата/формат/страна/грейд — цветные) и навыки
   // (хэштеги). Обе фиксированной высоты, поэтому карточки одной высоты и заголовок
   // не «скачет». Страну для карточки компании берём из поля локации.
-  const conds=salPill(j)+fmtCond(j.work_format)+geoCond(detectCountry(j.location))+gradeConds(grade);
+  const conds=salPill(j)+fmtCond(j.work_format)+locCond(j.location)+gradeConds(grade);
   // Описание есть у всех карточек: короткое из ATS, иначе — отдел/локация.
   const excerpt=j.excerpt || [j.department, j.location].filter(Boolean).join(" · ") || "Открытая вакансия — подробности на career-сайте.";
   return `<div class="post" data-kind="co" data-id="${j._id}" data-link="${esc(j.apply_url)}">
@@ -1055,7 +1066,7 @@ function detailModel(p){
       ava:avatarCo(p), company:p.company,
       source:`Career-сайт компании${ats?` · ${esc(ats)}`:""}`,
       title:p.title, desc:p.excerpt||"Полное описание — на странице вакансии.",
-      meta:fmtCond(p.work_format)+geoCond(detectCountry(p.location))+gradeConds(grade), skills, apply:p.apply_url,
+      meta:fmtCond(p.work_format)+locCond(p.location)+gradeConds(grade), skills, apply:p.apply_url,
     };
   }
   const {title:jt, company:co}=parseTgJob(p.text,p.tags);
