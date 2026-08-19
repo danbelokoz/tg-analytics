@@ -395,9 +395,10 @@ footer{padding:36px 0 24px;color:#9095a5;font-size:13px;font-weight:600}
 // сайт открывался в РФ без VPN (см. PROJECT.md). JSON обновляет CI после скрейпа.
 
 // Группы тегов для левого меню. Порядок = порядок в сайдбаре.
-// Источник — карточки с подписью (Telegram / Ru-global / Global / Russia).
-// Категория вакансии (_srcCat): Telegram — посты из каналов; для компаний —
-// локация в России → Russia; иначе RU-корни → Ru-global; иначе Global.
+// Источник — карточки с подписью (Telegram / Ru-global / Global).
+// Категория вакансии (_srcCat): Telegram — посты из каналов И вакансии компаний
+// с российской локацией (это один рынок); для остальных компаний —
+// RU-корни → Ru-global; иначе Global.
 // Порядок = порядок пилюль. Telegram+Global (короткие) в первый ряд,
 // Ru-global (широкая подпись) переносится во второй — итого два ряда.
 const SRC_CATS = ["Telegram","Global","Ru-global"];
@@ -417,8 +418,10 @@ const RU_ROOTS = new Set([
   "jetbrains","miro","semrush","revolut","nginx","gett","luxoft","playrix",
   "wargaming","indrive","ozon","wildberries","kaspersky","aviasales","selectel",
 ]);
-// Локация в России → категория Russia (приоритет над RU-корнями/Global).
-const RU_LOC = /росс|russia|москв|moscow|питер|petersburg|санкт|казан|новосиб|екатеринб|нижн\s*новг|краснодар|воронеж|сочи|\bрф\b/i;
+// Локация в России → категория Telegram (приоритет над RU-корнями/Global).
+// Курируемый список: крупные города + маркеры страны. У мелких городов длинный
+// хвост — редкий райцентр может не совпасть и уехать в Ru-global; список пополняем.
+const RU_LOC = /росс|russia|москв|moscow|питер|petersburg|санкт|казан|новосиб|екатеринб|новгород|краснодар|воронеж|сочи|самар|уфа|владимир|пермь|челябинск|омск|ростов|волгоград|красноярск|тюмен|тольятти|ижевск|барнаул|ульяновск|иркутск|хабаровск|владивосток|калининград|ярославл|тула|рязан|сасово|\bрф\b/i;
 const G_ROLE  = ["Frontend","Backend","Fullstack","Mobile","DevOps","QA","Data/ML","Аналитик","Design","Product","Project","Marketing","Sales","HR","Management","Support"];
 const G_STACK = ["Python","JS/TS","Java","PHP","Go",".NET/C#","1C"];
 const G_FMT   = ["Удалёнка","Гибрид","Офис","Релокация"];
@@ -759,7 +762,7 @@ function salaryGroup(label){
   return `<div class="fgroup"><h4>${esc(label)}</h4><div class="salgrid">${cells}</div></div>`;
 }
 
-// Источник — пилюли с подписью (Telegram / Ru-global / Global / Russia)
+// Источник — пилюли с подписью (Telegram / Ru-global / Global)
 // и счётчиком. Множественный выбор (OR). Пилюли показываем всегда, чтобы
 // набор был стабильным.
 function sourceGroup(label, freq){
@@ -1190,8 +1193,11 @@ function normCo(j){
   const tags=(j.tags||[]).slice();
   if(j.work_format) tags.push(j.work_format);   // формат работы — фильтруемым тегом
   j.tags=tags; j._src="Компании";
-  // Категория: RU-корни ИЛИ локация в России → Ru-global; иначе Global.
-  j._srcCat = (RU_ROOTS.has(j.company_slug) || RU_LOC.test(j.location||"")) ? "Ru-global" : "Global";
+  // Категория (по приоритету): локация в России → Telegram (то же, что и посты
+  // из каналов — это про российский рынок); иначе RU-корни → Ru-global; иначе Global.
+  j._srcCat = RU_LOC.test(j.location||"") ? "Telegram"
+            : RU_ROOTS.has(j.company_slug) ? "Ru-global"
+            : "Global";
   j._search=((j.title||"")+" "+(j.company||"")+" "+(j.location||"")).toLowerCase();
   // Реальная вилка из ATS-описания (scrape_ats.py) указана ГОДОВОЙ → приводим к
   // месяцу (÷12), как и всё на сайте. Для фильтра — в ₽/мес, показываем в валюте.
